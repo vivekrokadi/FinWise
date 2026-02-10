@@ -1,13 +1,12 @@
-import { 
-  scanReceiptWithAI, 
-  generateFinancialInsights, 
-  generateInvestmentSuggestions,
-  generateTaxTips,
-  testGeminiConnection
+import {
+  scanReceiptWithAI,
+  generateFinancialInsights,
+  generateInvestmentSuggestions as aiInvestmentSuggestions,
+  generateTaxTips as aiTaxTips
 } from '../utils/aiService.js';
+
 import Transaction from '../models/Transaction.js';
 import Account from '../models/Account.js';
-import Budget from '../models/Budget.js';
 
 export const scanReceipt = async (req, res) => {
   try {
@@ -39,70 +38,85 @@ export const scanReceipt = async (req, res) => {
 
 export const generateInsights = async (req, res) => {
   try {
-    console.log('🔍 Starting insights generation...');
-    console.log('Insights request body:', req.body); // Debug log
-    
     const { period = 'month', accountId } = req.body || {};
     const userId = req.user.id;
 
-    // Get financial data for the period
-    const startDate = new Date();
+    const now = new Date();
+    const startDate = new Date(now);
+
+    // Set window based on period
     if (period === 'month') {
       startDate.setDate(1);
+    } else if (period === 'week') {
+      startDate.setDate(startDate.getDate() - 7);
     } else if (period === 'year') {
       startDate.setMonth(0, 1);
     } else if (period === 'quarter') {
-      const currentQuarter = Math.floor(startDate.getMonth() / 3);
-      startDate.setMonth(currentQuarter * 3, 1);
+      const quarter = Math.floor(startDate.getMonth() / 3);
+      startDate.setMonth(quarter * 3, 1);
+    } else if (period === 'all') {
+      startDate.setFullYear(1970);
     }
 
-    const endDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
 
-    let matchQuery = {
-      user: userId,
-      date: { $gte: startDate, $lte: endDate }
+    const endDate = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
+
+    const mkQuery = (from, to) => {
+      const q = {
+        user: userId,
+        date: { $gte: from, $lte: to }
+      };
+      if (accountId) q.account = accountId;
+      return q;
     };
 
-    if (accountId) {
-      matchQuery.account = accountId;
+    
+    let matchQuery = mkQuery(startDate, endDate);
+    let transactions = await Transaction.find(matchQuery);
+
+    if (transactions.length === 0 && period !== 'all') {
+      const d90 = new Date(now);
+      d90.setDate(now.getDate() - 90);
+      matchQuery = mkQuery(d90, endDate);
+      transactions = await Transaction.find(matchQuery);
     }
 
-    console.log('📊 Fetching transactions for insights...');
-    const transactions = await Transaction.find(matchQuery);
-    console.log(`📈 Found ${transactions.length} transactions`);
-    
-    const stats = transactions.reduce((acc, transaction) => {
-      const amount = transaction.amount;
-      
-      if (transaction.type === 'EXPENSE') {
-        acc.totalExpenses += amount;
-        acc.byCategory[transaction.category] = (acc.byCategory[transaction.category] || 0) + amount;
-      } else if (transaction.type === 'INCOME') {
-        acc.totalIncome += amount;
-      } else if (transaction.type === 'INVESTMENT') {
-        acc.totalInvestment += amount;
+    // Build financial summary
+    const stats = transactions.reduce(
+      (acc, t) => {
+        const amt = t.amount;
+
+        if (t.type === 'EXPENSE') {
+          acc.totalExpenses += amt;
+          const cat = (t.category || '').toLowerCase();
+          acc.byCategory[cat] = (acc.byCategory[cat] || 0) + amt;
+        } else if (t.type === 'INCOME') {
+          acc.totalIncome += amt;
+        } else if (t.type === 'INVESTMENT') {
+          acc.totalInvestment += amt;
+        } else if (t.type === 'TAX') {
+          acc.totalTax += amt;
+        }
+
+        return acc;
+      },
+      {
+        totalExpenses: 0,
+        totalIncome: 0,
+        totalInvestment: 0,
+        totalTax: 0,
+        byCategory: {},
+        transactionCount: transactions.length
       }
-      
-      return acc;
-    }, {
-      totalExpenses: 0,
-      totalIncome: 0,
-      totalInvestment: 0,
-      byCategory: {},
-      transactionCount: transactions.length
-    });
+    );
 
-    console.log('📋 Financial stats calculated:', stats);
-
-    // Generate AI insights
-    console.log('🤖 Calling AI service for insights...');
     const insights = await generateFinancialInsights({
       period,
       ...stats,
       netIncome: stats.totalIncome - stats.totalExpenses
     });
-
-    console.log('✅ Insights generated successfully');
 
     res.status(200).json({
       success: true,
@@ -112,52 +126,54 @@ export const generateInsights = async (req, res) => {
           totalIncome: stats.totalIncome,
           totalExpenses: stats.totalExpenses,
           totalInvestment: stats.totalInvestment,
+          totalTax: stats.totalTax,
           netIncome: stats.totalIncome - stats.totalExpenses,
           transactionCount: stats.transactionCount
         },
         period: {
-          start: startDate,
-          end: endDate
+          start: matchQuery.date.$gte,
+          end: matchQuery.date.$lte
         }
       }
     });
   } catch (error) {
-    console.error('❌ Error in generateInsights controller:', error);
+    console.error('Error generating insights:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to generate insights',
-      error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: error.message || 'Failed to generate insights'
     });
   }
 };
 
 export const getInvestmentSuggestions = async (req, res) => {
   try {
-    console.log('Investment suggestions request body:', req.body); // Debug log
-    
-    const { riskTolerance = 'MODERATE', investmentAmount = 1000 } = req.body || {};
+    const { riskTolerance = 'MODERATE', investmentAmount = 1000 } = req.body;
     const userId = req.user.id;
 
-    // Get user financial data
     const accounts = await Account.find({ user: userId });
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
-    const transactions = await Transaction.find({
+    const recentInv = await Transaction.find({
       user: userId,
       type: 'INVESTMENT'
-    }).sort({ date: -1 }).limit(10);
+    })
+      .sort({ date: -1 })
+      .limit(5);
 
     const userData = {
       totalBalance,
-      investmentHistory: transactions.length,
-      recentInvestments: transactions.slice(0, 3).map(t => ({
-        type: t.investmentType,
+      investmentHistory: recentInv.length,
+      recentInvestments: recentInv.map((t) => ({
+        type: t.investmentType || 'UNKNOWN',
         amount: t.amount
       }))
     };
 
-    console.log('🤖 Generating investment suggestions...');
-    const suggestions = await generateInvestmentSuggestions(userData, riskTolerance, investmentAmount);
+    const suggestions = await aiInvestmentSuggestions(
+      userData,
+      riskTolerance,
+      investmentAmount
+    );
 
     res.status(200).json({
       success: true,
@@ -165,33 +181,32 @@ export const getInvestmentSuggestions = async (req, res) => {
         suggestions,
         riskProfile: riskTolerance,
         investmentAmount,
-        userSnapshot: userData,
-        disclaimer: 'These are general suggestions. Please consult with a financial advisor for personalized advice.'
+        userSnapshot: userData
       }
     });
   } catch (error) {
-    console.error('❌ Investment suggestions error:', error);
+    console.error('Investment suggestions error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to generate investment suggestions',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Failed to generate investment suggestions'
     });
   }
 };
 
+
 export const getTaxTips = async (req, res) => {
   try {
     const userId = req.user.id;
-    const currentYear = new Date().getFullYear();
+    const year = new Date().getFullYear();
 
-    const taxDeductibleExpenses = await Transaction.aggregate([
+    const deductible = await Transaction.aggregate([
       {
         $match: {
           user: userId,
           taxDeductible: true,
           date: {
-            $gte: new Date(currentYear, 0, 1),
-            $lte: new Date(currentYear, 11, 31)
+            $gte: new Date(year, 0, 1),
+            $lte: new Date(year, 11, 31)
           }
         }
       },
@@ -203,59 +218,43 @@ export const getTaxTips = async (req, res) => {
       }
     ]);
 
-    const totalDeductible = taxDeductibleExpenses.reduce((sum, item) => sum + item.total, 0);
+    const totalDeductible = deductible.reduce((s, d) => s + d.total, 0);
 
     const investments = await Transaction.find({
       user: userId,
       type: 'INVESTMENT',
       date: {
-        $gte: new Date(currentYear, 0, 1),
-        $lte: new Date(currentYear, 11, 31)
+        $gte: new Date(year, 0, 1),
+        $lte: new Date(year, 11, 31)
       }
     });
 
-    const totalInvestments = investments.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvestments = investments.reduce((s, t) => s + t.amount, 0);
 
-    const taxData = {
-      year: currentYear,
+    const payload = {
+      year,
       totalDeductible,
       totalInvestments,
-      taxDeductibleCount: taxDeductibleExpenses.length,
+      taxDeductibleCount: deductible.length,
       investmentCount: investments.length
     };
 
-    console.log('🤖 Generating tax tips...');
-    const tips = await generateTaxTips(taxData);
+    const tips = await aiTaxTips(payload);
 
     res.status(200).json({
       success: true,
       data: {
         tips,
-        taxYear: currentYear,
+        taxYear: year,
         totalDeductibleExpenses: totalDeductible,
-        totalInvestments: totalInvestments,
-        note: 'Consult with a tax professional for personalized advice.'
+        totalInvestments
       }
     });
   } catch (error) {
-    console.error('❌ Tax tips error:', error);
+    console.error('Tax tips error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to generate tax tips'
-    });
-  }
-};
-
-// Test endpoint for Gemini connection
-export const testAIConnection = async (req, res) => {
-  try {
-    const result = await testGeminiConnection();
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'AI connection test failed',
-      error: error.message
     });
   }
 };
