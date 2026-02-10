@@ -1,11 +1,13 @@
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
 
+const lc = (s) => (typeof s === 'string' ? s.toLowerCase() : s);
+
 export const getBudgets = async (req, res) => {
   try {
     const { year = new Date().getFullYear() } = req.query;
-    
-    const budgets = await Budget.find({ 
+
+    const budgets = await Budget.find({
       user: req.user.id,
       year: parseInt(year)
     }).sort({ category: 1 });
@@ -14,26 +16,21 @@ export const getBudgets = async (req, res) => {
       budgets.map(async (budget) => {
         const startDate = new Date(budget.year, budget.month - 1, 1);
         const endDate = new Date(budget.year, budget.month, 0);
-        
+
         const expenses = await Transaction.aggregate([
           {
             $match: {
               user: req.user.id,
               type: 'EXPENSE',
-              category: budget.category,
+              $expr: { $eq: [{ $toLower: '$category' }, lc(budget.category)] },
               date: { $gte: startDate, $lte: endDate }
             }
           },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: '$amount' }
-            }
-          }
+          { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
 
         const currentSpending = expenses[0]?.total || 0;
-        
+
         return {
           ...budget.toObject(),
           currentSpending,
@@ -50,10 +47,7 @@ export const getBudgets = async (req, res) => {
     });
   } catch (error) {
     console.error('Get budgets error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
