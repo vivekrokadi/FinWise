@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import { errorHandler } from './middleware/errorHandler.js';
 import limiter from './middleware/rateLimit.js';
 
-// Route imports
+// Routes
 import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/accounts.js';
 import transactionRoutes from './routes/transactions.js';
@@ -18,27 +18,26 @@ dotenv.config();
 
 const app = express();
 
-// Body parser middleware - THIS IS CRITICAL
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 100
+}));
 
-// CORS
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true
+}));
 
-// Morgan for logging
-app.use(morgan('combined'));
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 
-// Rate limiting
 app.use(limiter);
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/accounts', accountRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/users', userRoutes);
-
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -48,7 +47,20 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handler
+app.use('/api/auth', authRoutes);
+app.use('/api/accounts', accountRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/users', userRoutes);
+
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} not found`
+  });
+});
+
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
