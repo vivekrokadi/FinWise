@@ -3,10 +3,8 @@ dotenv.config();
 import { GoogleGenAI } from "@google/genai";
 import cloudinary from '../config/cloudinary.js';
 
-// Initialize Google GenAI with the correct package
 const ai = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
-// Check if Gemini is properly configured
 export const isGeminiAvailable = async () => {
   if (!ai) {
     console.log('Gemini API key not configured');
@@ -14,7 +12,6 @@ export const isGeminiAvailable = async () => {
   }
   
   try {
-    // Test with a simple prompt
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: "Say 'TEST'",
@@ -26,12 +23,10 @@ export const isGeminiAvailable = async () => {
   }
 };
 
-// Smart financial insights with intelligent fallbacks
 export const generateFinancialInsights = async (financialData) => {
   try {
     console.log('Generating financial insights...');
 
-    // Check if we can use Gemini
     const geminiAvailable = await isGeminiAvailable();
     
     if (geminiAvailable) {
@@ -63,7 +58,6 @@ export const generateFinancialInsights = async (financialData) => {
         const text = response.text.trim();
         console.log('AI Response:', text);
 
-        // Parse the response into an array of insights
         const insights = text.split('\n')
           .filter(line => line.trim() && (line.match(/^\d+\./) || line.match(/^•/) || line.match(/^-/)))
           .map(line => line.replace(/^[\d•\-\.\s]+/, '').trim())
@@ -71,25 +65,22 @@ export const generateFinancialInsights = async (financialData) => {
 
         if (insights.length >= 2) {
           console.log('AI insights generated successfully');
-          return insights.slice(0, 3); // Return max 3 insights
+          return insights.slice(0, 3); 
         }
       } catch (aiError) {
         console.log('AI service error, using smart fallback:', aiError.message);
       }
     }
 
-    // Smart fallback insights based on actual data
     console.log('Using smart fallback insights');
     return generateSmartFallbackInsights(financialData);
     
   } catch (error) {
     console.error('Error in generateFinancialInsights:', error);
-    // Final fallback - always return something useful
     return generateSmartFallbackInsights(financialData);
   }
 };
 
-// Generate intelligent fallback insights based on the data
 const generateSmartFallbackInsights = (data) => {
   const insights = [];
   const totalIncome = data.totalIncome || 0;
@@ -98,30 +89,40 @@ const generateSmartFallbackInsights = (data) => {
   const transactionCount = data.transactionCount || 0;
 
   // Insight 1: Based on income vs expenses
-  if (netIncome < 0) {
-    insights.push("Your expenses exceed your income. Focus on reducing discretionary spending and creating a strict budget.");
+  if (totalIncome === 0 && totalExpenses === 0) {
+    insights.push("Start tracking your income and expenses to get personalized financial insights and better manage your money.");
+  } else if (netIncome < 0) {
+    insights.push("Your expenses exceed your income. Focus on reducing discretionary spending and creating a strict budget to avoid debt.");
   } else if (netIncome < totalIncome * 0.2) {
-    insights.push("You're saving less than 20% of your income. Consider increasing your savings rate for better financial security.");
+    insights.push("You're saving less than 20% of your income. Consider increasing your savings rate for better financial security and future planning.");
   } else {
-    insights.push("Great job maintaining healthy savings! Consider investing your surplus for long-term growth.");
+    insights.push("Great job maintaining healthy savings! Consider investing your surplus for long-term growth and wealth building.");
   }
 
   // Insight 2: Based on transaction patterns
   if (transactionCount === 0) {
-    insights.push("Start tracking your expenses to understand your spending patterns and identify savings opportunities.");
+    insights.push("Start tracking your expenses regularly to understand your spending patterns and identify savings opportunities.");
   } else if (transactionCount < 10) {
-    insights.push("You have few transactions this period. Consider if you're tracking all your expenses for accurate financial planning.");
+    insights.push("You have few transactions this period. Make sure you're tracking all expenses for accurate financial planning and budgeting.");
   } else {
-    insights.push(`You've made ${transactionCount} transactions. Review them to identify recurring expenses that could be optimized.`);
+    insights.push(`You've made ${transactionCount} transactions. Review them regularly to identify recurring expenses that could be optimized or reduced.`);
   }
 
-  // Insight 3: General financial advice
-  insights.push("Set specific financial goals and track your progress monthly. Consider automating savings and investments.");
+  // Insight 3: Category-specific advice
+  const categoryBreakdown = data.byCategory || {};
+  const largestCategory = Object.keys(categoryBreakdown).reduce((a, b) => 
+    categoryBreakdown[a] > categoryBreakdown[b] ? a : b, null
+  );
+
+  if (largestCategory && categoryBreakdown[largestCategory] > totalExpenses * 0.4) {
+    insights.push(`Your ${largestCategory} spending is quite high. Consider ways to optimize this category to improve your overall financial health.`);
+  } else {
+    insights.push("Set specific financial goals and track your progress monthly. Consider automating savings and investments for consistent growth.");
+  }
 
   return insights;
 };
 
-// Enhanced receipt scanning with fallback
 export const scanReceiptWithAI = async (imageBuffer, mimeType) => {
   try {
     console.log('📸 Processing receipt...');
@@ -144,7 +145,6 @@ export const scanReceiptWithAI = async (imageBuffer, mimeType) => {
 
     console.log('Receipt uploaded to Cloudinary:', uploadResult.secure_url);
 
-    // Try AI scanning if available
     const geminiAvailable = await isGeminiAvailable();
     if (geminiAvailable) {
       try {
@@ -175,7 +175,6 @@ export const scanReceiptWithAI = async (imageBuffer, mimeType) => {
         const text = response.text.trim();
         console.log('AI Receipt Response:', text);
 
-        // Simple parsing of the response
         const amountMatch = text.match(/\$?(\d+\.?\d*)/);
         const dateMatch = text.match(/(\d{4}-\d{2}-\d{2})|(\d{1,2}\/\d{1,2}\/\d{4})/);
         const categoryMatch = text.match(/(groceries|dining|shopping|transportation|entertainment|utilities|healthcare|other)/i);
@@ -195,7 +194,6 @@ export const scanReceiptWithAI = async (imageBuffer, mimeType) => {
       }
     }
 
-    // Fallback: Return basic receipt data with Cloudinary URL
     console.log('Using receipt fallback with Cloudinary storage');
     return {
       amount: 25.99,
@@ -213,7 +211,6 @@ export const scanReceiptWithAI = async (imageBuffer, mimeType) => {
   }
 };
 
-// Helper function to extract merchant name from text
 const extractMerchantName = (text) => {
   const commonMerchants = ['walmart', 'target', 'amazon', 'starbucks', 'mcdonalds', 'kroger', 'costco', 'bestbuy'];
   const lines = text.split('\n');
@@ -260,11 +257,9 @@ export const generateInvestmentSuggestions = async (userData, riskProfile = 'MOD
         const text = response.text.trim();
         console.log('AI Investment Response:', text);
 
-        // Parse the response and create structured suggestions
         const lines = text.split('\n').filter(line => line.trim());
         const suggestions = [];
 
-        // Create structured suggestions from the response
         if (lines.length > 0) {
           suggestions.push({
             type: 'STOCKS',
@@ -296,7 +291,6 @@ export const generateInvestmentSuggestions = async (userData, riskProfile = 'MOD
       }
     }
 
-    // Fallback investment suggestions
     return [
       {
         type: 'STOCKS',
@@ -327,7 +321,6 @@ export const generateInvestmentSuggestions = async (userData, riskProfile = 'MOD
   }
 };
 
-// Generate tax tips using Gemini
 export const generateTaxTips = async (taxData) => {
   try {
     const geminiAvailable = await isGeminiAvailable();
@@ -357,7 +350,6 @@ export const generateTaxTips = async (taxData) => {
         const text = response.text.trim();
         console.log(' AI Tax Tips Response:', text);
 
-        // Parse the response into structured tips
         const lines = text.split('\n').filter(line => line.trim());
         const tips = [];
 
@@ -382,7 +374,6 @@ export const generateTaxTips = async (taxData) => {
       }
     }
 
-    // Fallback tax tips
     return [
       {
         category: 'DEDUCTIONS',
@@ -412,7 +403,6 @@ export const generateTaxTips = async (taxData) => {
   }
 };
 
-// Helper function to categorize tips
 const getCategoryFromTip = (tip) => {
   const lowerTip = tip.toLowerCase();
   if (lowerTip.includes('deduct') || lowerTip.includes('expense')) return 'DEDUCTIONS';
@@ -422,7 +412,6 @@ const getCategoryFromTip = (tip) => {
   return 'GENERAL';
 };
 
-// Test Gemini connection
 export const testGeminiConnection = async () => {
   try {
     if (!ai) {

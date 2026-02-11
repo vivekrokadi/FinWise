@@ -1,19 +1,17 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-// Generate JWT Token
+
 export const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
 
-// Generate random ID
 export const generateRandomId = () => {
   return crypto.randomUUID();
 };
 
-// Calculate next recurring date
 export const calculateNextRecurringDate = (startDate, interval) => {
   const date = new Date(startDate);
 
@@ -39,13 +37,12 @@ export const calculateNextRecurringDate = (startDate, interval) => {
 
 // Format currency
 export const formatCurrency = (amount, currency = 'RUPEES') => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IND', {
     style: 'currency',
     currency: currency,
   }).format(amount);
 };
 
-// Get current month and year
 export const getCurrentMonthYear = () => {
   const now = new Date();
   return {
@@ -54,19 +51,16 @@ export const getCurrentMonthYear = () => {
   };
 };
 
-// Calculate percentage
 export const calculatePercentage = (part, total) => {
   if (total === 0) return 0;
   return (part / total) * 100;
 };
 
-// Validate email
 export const isValidEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// Sanitize user input
 export const sanitizeInput = (input) => {
   if (typeof input === 'string') {
     return input.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
