@@ -4,8 +4,7 @@ import {
   scanReceipt,
   generateInsights,
   getInvestmentSuggestions,
-  getTaxTips,
-  testAIConnection
+  getTaxTips
 } from '../controllers/aiController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -16,7 +15,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 5 * 1024 * 1024 
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -34,6 +33,6 @@ router.post('/scan-receipt', upload.single('receipt'), scanReceipt);
 router.post('/insights', generateInsights);
 router.post('/investment-suggestions', getInvestmentSuggestions);
 router.post('/tax-tips', getTaxTips);
-router.get('/test-connection', testAIConnection); // Add test route
+
 
 export default router;
