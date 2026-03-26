@@ -1,25 +1,12 @@
-import { ENV } from '../config/env'
 import { STORAGE_KEYS, HTTP_STATUS } from '../utils/constants'
 
-/**
- * Centralized API client with auth header handling
- * and global error processing
- */
-class ApiClient {
-  constructor() {
-    this.baseURL = ENV.API_URL
-  }
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
-  /**
-   * Get auth token from localStorage
-   */
+class ApiClient {
   getToken() {
     return localStorage.getItem(STORAGE_KEYS.TOKEN)
   }
 
-  /**
-   * Set auth token
-   */
   setToken(token) {
     if (token) {
       localStorage.setItem(STORAGE_KEYS.TOKEN, token)
@@ -28,37 +15,22 @@ class ApiClient {
     }
   }
 
-  /**
-   * Get headers with auth token
-   */
-  getHeaders(options = {}) {
+  getHeaders(extra = {}) {
     const token = this.getToken()
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers
-    }
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
+    const headers = { 'Content-Type': 'application/json', ...extra }
+    if (token) headers['Authorization'] = `Bearer ${token}`
     return headers
   }
 
-  /**
-   * Handle response, check for errors
-   */
   async handleResponse(response) {
     const data = await response.json()
 
-    // Handle 401 Unauthorized globally
     if (response.status === HTTP_STATUS.UNAUTHORIZED) {
       this.setToken(null)
       window.location.href = '/login'
       throw new Error('Session expired. Please login again.')
     }
 
-    // Handle other error statuses
     if (!response.ok) {
       const error = new Error(data.message || 'Something went wrong')
       error.status = response.status
@@ -69,76 +41,54 @@ class ApiClient {
     return data
   }
 
-  /**
-   * GET request
-   */
-  async get(endpoint, options = {}) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+  async get(endpoint) {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'GET',
-      headers: this.getHeaders(options),
-      ...options
+      headers: this.getHeaders()
     })
     return this.handleResponse(response)
   }
 
-  /**
-   * POST request
-   */
-  async post(endpoint, body, options = {}) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+  async post(endpoint, body) {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: this.getHeaders(options),
-      body: JSON.stringify(body),
-      ...options
+      headers: this.getHeaders(),
+      body: JSON.stringify(body)
     })
     return this.handleResponse(response)
   }
 
-  /**
-   * PUT request
-   */
-  async put(endpoint, body, options = {}) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+  async put(endpoint, body) {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: this.getHeaders(options),
-      body: JSON.stringify(body),
-      ...options
+      headers: this.getHeaders(),
+      body: JSON.stringify(body)
     })
     return this.handleResponse(response)
   }
 
-  /**
-   * DELETE request
-   */
-  async delete(endpoint, options = {}) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+  // body is optional — needed for bulk-delete which sends { transactionIds: [...] }
+  async delete(endpoint, body) {
+    const config = {
       method: 'DELETE',
-      headers: this.getHeaders(options),
-      ...options
-    })
+      headers: this.getHeaders()
+    }
+    if (body) config.body = JSON.stringify(body)
+    const response = await fetch(`${BASE_URL}${endpoint}`, config)
     return this.handleResponse(response)
   }
 
-  /**
-   * POST with FormData (for file uploads)
-   */
-  async postFormData(endpoint, formData, options = {}) {
+  async postFormData(endpoint, formData) {
     const token = this.getToken()
     const headers = {}
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',
       headers,
-      body: formData,
-      ...options
+      body: formData
     })
     return this.handleResponse(response)
   }
 }
 
-// Create singleton instance
 export const apiClient = new ApiClient()
