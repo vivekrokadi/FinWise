@@ -26,12 +26,8 @@ import AIInsights from './features/ai/pages/AIInsights'
 // Profile
 import Profile from './features/profile/pages/Profile'
 
-// Settings (placeholder)
-const Settings = () => (
-  <div className="p-8 text-center text-gray-500">
-    Settings page coming soon
-  </div>
-)
+import Settings from './features/settings/pages/Settings'
+import NotFound from './features/errors/NotFound'
 
 function App() {
   return (
@@ -67,8 +63,8 @@ function App() {
         </Route>
       </Route>
 
-      {/* 404 */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* 404 — must be outside ProtectedRoute so unauthenticated users see it too */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
