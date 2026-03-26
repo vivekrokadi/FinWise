@@ -1,50 +1,52 @@
-const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
-  error.message = err.message;
+export const errorHandler = (err, req, res, next) => {
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Server Error';
 
-  // Log to console for dev
-  console.error('Error:', err);
+  console.error(`[${req.method}] ${req.originalUrl} →`, err);
 
-  // Mongoose bad ObjectId
+  // Mongoose: bad ObjectId
   if (err.name === 'CastError') {
-    const message = 'Resource not found';
-    error = { message, statusCode: 404 };
+    statusCode = 404;
+    message = 'Resource not found';
   }
 
-  // Mongoose duplicate key
+  // Mongoose: duplicate key
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    const message = `${field} already exists`;
-    error = { message, statusCode: 400 };
+    statusCode = 400;
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
+    message = `${field} already exists`;
   }
 
-  // Mongoose validation error
+  // Mongoose: validation error
   if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map(val => val.message).join(', ');
-    error = { message, statusCode: 400 };
+    statusCode = 400;
+    message = Object.values(err.errors)
+      .map((val) => val.message)
+      .join(', ');
   }
 
   // JWT errors
   if (err.name === 'JsonWebTokenError') {
-    const message = 'Invalid token';
-    error = { message, statusCode: 401 };
+    statusCode = 401;
+    message = 'Invalid token. Please log in again.';
   }
-
   if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = { message, statusCode: 401 };
+    statusCode = 401;
+    message = 'Token expired. Please log in again.';
   }
 
   // Multer errors
   if (err.code === 'LIMIT_FILE_SIZE') {
-    const message = 'File too large';
-    error = { message, statusCode: 400 };
+    statusCode = 400;
+    message = 'File too large. Maximum allowed size is 5MB.';
+  }
+  if (err.message === 'Only image files are allowed') {
+    statusCode = 400;
+    message = err.message;
   }
 
-  res.status(error.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
-    message: error.message || 'Server Error'
+    message
   });
 };
-
-export { errorHandler };

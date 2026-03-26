@@ -1,9 +1,10 @@
+import mongoose from 'mongoose';
 import Account from '../models/Account.js';
 import Transaction from '../models/Transaction.js';
 
 export const getAccounts = async (req, res) => {
   try {
-    const accounts = await Account.find({ user: req.user.id })
+    const accounts = await Account.find({ user: new mongoose.Types.ObjectId(req.user.id) })
       .sort({ isDefault: -1, createdAt: -1 });
 
     res.status(200).json({
@@ -19,7 +20,7 @@ export const getAccounts = async (req, res) => {
 
 export const getAccount = async (req, res) => {
   try {
-    const account = await Account.findOne({ _id: req.params.id, user: req.user.id });
+    const account = await Account.findOne({ _id: req.params.id, user: new mongoose.Types.ObjectId(req.user.id) });
 
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });
@@ -27,7 +28,7 @@ export const getAccount = async (req, res) => {
 
     const transactions = await Transaction.find({
       account: req.params.id,
-      user: req.user.id
+      user: new mongoose.Types.ObjectId(req.user.id)
     }).sort({ date: -1 }).limit(50);
 
     res.status(200).json({
@@ -70,7 +71,7 @@ export const createAccount = async (req, res) => {
       isDefault: Boolean(isDefault),
       color: color || '#3B82F6',
       description: description || '',
-      user: req.user.id
+      user: new mongoose.Types.ObjectId(req.user.id)
     });
 
     res.status(201).json({
@@ -96,7 +97,7 @@ export const createAccount = async (req, res) => {
 
 export const updateAccount = async (req, res) => {
   try {
-    let account = await Account.findOne({ _id: req.params.id, user: req.user.id });
+    let account = await Account.findOne({ _id: req.params.id, user: new mongoose.Types.ObjectId(req.user.id) });
 
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });
@@ -104,6 +105,15 @@ export const updateAccount = async (req, res) => {
 
     const { balance, type, ...rest } = req.body || {};
     const updateData = { ...rest };
+
+    // Allow direct balance updates from the account edit form
+    if (balance !== undefined) {
+      const parsedBalance = parseFloat(balance);
+      if (isNaN(parsedBalance)) {
+        return res.status(400).json({ success: false, message: 'Balance must be a number' });
+      }
+      updateData.balance = parsedBalance;
+    }
 
     if (type) {
       const normalizedType = String(type).trim().toUpperCase();
@@ -132,7 +142,7 @@ export const updateAccount = async (req, res) => {
 
 export const deleteAccount = async (req, res) => {
   try {
-    const account = await Account.findOne({ _id: req.params.id, user: req.user.id });
+    const account = await Account.findOne({ _id: req.params.id, user: new mongoose.Types.ObjectId(req.user.id) });
 
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });
@@ -154,13 +164,13 @@ export const deleteAccount = async (req, res) => {
 
 export const setDefaultAccount = async (req, res) => {
   try {
-    const account = await Account.findOne({ _id: req.params.id, user: req.user.id });
+    const account = await Account.findOne({ _id: req.params.id, user: new mongoose.Types.ObjectId(req.user.id) });
 
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });
     }
 
-    await Account.updateMany({ user: req.user.id }, { isDefault: false });
+    await Account.updateMany({ user: new mongoose.Types.ObjectId(req.user.id) }, { isDefault: false });
 
     account.isDefault = true;
     await account.save();
@@ -181,7 +191,7 @@ export const getAccountStats = async (req, res) => {
     const accountId = req.params.id;
     const userId = req.user.id;
 
-    const account = await Account.findOne({ _id: accountId, user: userId });
+    const account = await Account.findOne({ _id: accountId, user: new mongoose.Types.ObjectId(userId) });
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });
     }
@@ -193,7 +203,7 @@ export const getAccountStats = async (req, res) => {
       {
         $match: {
           account: account._id,
-          user: userId,
+          user: new mongoose.Types.ObjectId(userId),
           type,
           $expr: {
             $and: [
@@ -214,7 +224,7 @@ export const getAccountStats = async (req, res) => {
       monthlyIncome: monthlyIncome[0]?.total || 0,
       monthlyExpenses: monthlyExpenses[0]?.total || 0,
       netFlow: (monthlyIncome[0]?.total || 0) - (monthlyExpenses[0]?.total || 0),
-      transactionCount: await Transaction.countDocuments({ account: accountId, user: userId })
+      transactionCount: await Transaction.countDocuments({ account: accountId, user: new mongoose.Types.ObjectId(userId) })
     };
 
     res.status(200).json({ success: true, data: stats });

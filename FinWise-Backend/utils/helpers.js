@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-
 export const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d',
@@ -35,11 +34,20 @@ export const calculateNextRecurringDate = (startDate, interval) => {
   return date;
 };
 
-// Format currency
-export const formatCurrency = (amount, currency = 'RUPEES') => {
-  return new Intl.NumberFormat('en-IND', {
+// Format currency — uses correct locale and ISO 4217 currency code
+export const formatCurrency = (amount, currency = 'INR') => {
+  // Map friendly names to ISO 4217 codes
+  const currencyMap = {
+    RUPEES: 'INR',
+    INR: 'INR',
+    USD: 'USD',
+    EUR: 'EUR',
+    GBP: 'GBP',
+  };
+  const isoCode = currencyMap[currency] || 'INR';
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: currency,
+    currency: isoCode,
   }).format(amount);
 };
 

@@ -5,7 +5,6 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -14,14 +13,7 @@ export const register = async (req, res) => {
       });
     }
 
-    // Create user
-    const user = await User.create({
-      name,
-      email,
-      password
-    });
-
-    // Generate token
+    const user = await User.create({ name, email, password });
     const token = generateToken(user._id);
 
     res.status(201).json({
@@ -40,10 +32,7 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -58,7 +47,6 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check if user exists and include password
     const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({
@@ -74,11 +62,9 @@ export const login = async (req, res) => {
       });
     }
 
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    // Use findByIdAndUpdate to avoid triggering the bcrypt pre-save hook
+    await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.status(200).json({
@@ -98,16 +84,16 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     res.status(200).json({
       success: true,
@@ -125,10 +111,7 @@ export const getMe = async (req, res) => {
     });
   } catch (error) {
     console.error('Get me error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -144,10 +127,7 @@ export const updateProfile = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user.id,
       fieldsToUpdate,
-      {
-        new: true,
-        runValidators: true
-      }
+      { new: true, runValidators: true }
     );
 
     res.status(200).json({
@@ -166,10 +146,7 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Update profile error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -178,6 +155,9 @@ export const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     if (!(await user.matchPassword(currentPassword))) {
       return res.status(401).json({
@@ -187,7 +167,7 @@ export const changePassword = async (req, res) => {
     }
 
     user.password = newPassword;
-    await user.save();
+    await user.save(); // pre-save hook will hash the new password
 
     res.status(200).json({
       success: true,
@@ -195,24 +175,15 @@ export const changePassword = async (req, res) => {
     });
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
 export const logout = async (req, res) => {
-  try {
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully'
-    });
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
-  }
+  // JWT is stateless — logout is handled client-side by discarding the token.
+  // This endpoint exists so the frontend has a consistent API surface.
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };

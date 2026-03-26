@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
   },
   currency: {
     type: String,
-    default: 'RUPEES'
+    default: 'INR'
   },
   monthlyBudget: {
     type: Number,
@@ -48,26 +48,28 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Encrypt password using bcrypt
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) {
-    next();
-  }
-
+// Hash password before save (only when modified)
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-// Match user entered password to hashed password in database
-userSchema.methods.matchPassword = async function(enteredPassword) {
+// Compare entered password to hashed password
+userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Cascade delete user accounts and transactions when user is deleted
-userSchema.pre('remove', async function(next) {
-  await this.model('Account').deleteMany({ user: this._id });
-  await this.model('Transaction').deleteMany({ user: this._id });
-  await this.model('Budget').deleteMany({ user: this._id });
+// Cascade delete accounts, transactions, and budgets when user is deleted
+// Uses deleteMany directly since findByIdAndDelete doesn't trigger 'remove' middleware
+userSchema.pre('findOneAndDelete', async function (next) {
+  const user = await this.model.findOne(this.getFilter());
+  if (user) {
+    await mongoose.model('Account').deleteMany({ user: user._id });
+    await mongoose.model('Transaction').deleteMany({ user: user._id });
+    await mongoose.model('Budget').deleteMany({ user: user._id });
+  }
   next();
 });
 

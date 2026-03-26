@@ -87,39 +87,48 @@ transactionSchema.index({ user: 1, category: 1 });
 transactionSchema.index({ user: 1, type: 1 });
 transactionSchema.index({ user: 1, isRecurring: 1 });
 
-// Normalize before save: force category lowercase & type uppercase
+// Helper: calculate balance impact of a transaction
+const getBalanceDelta = (type, amount) => {
+  if (type === 'INCOME') return amount;
+  if (type === 'EXPENSE' || type === 'INVESTMENT' || type === 'TAX') return -amount;
+  return 0;
+};
+
+// Track whether this is a new document before save
 transactionSchema.pre('save', function (next) {
+  this._wasNew = this.isNew;
   if (this.category) this.category = String(this.category).toLowerCase();
   if (this.type) this.type = String(this.type).toUpperCase();
   next();
 });
 
-// Update account balance when transaction is created
+// Update account balance only on CREATE (not on every subsequent save)
 transactionSchema.post('save', async function () {
-  const Account = mongoose.model('Account');
-  const account = await Account.findById(this.account);
-
-  if (account) {
-    let balanceChange = 0;
-    if (this.type === 'INCOME') balanceChange = this.amount;
-    if (this.type === 'EXPENSE' || this.type === 'INVESTMENT' || this.type === 'TAX') balanceChange = -this.amount;
-    account.balance += balanceChange;
-    await account.save();
+  if (!this._wasNew) return;
+  try {
+    const Account = mongoose.model('Account');
+    const account = await Account.findById(this.account);
+    if (account) {
+      account.balance += getBalanceDelta(this.type, this.amount);
+      await account.save();
+    }
+  } catch (err) {
+    console.error('Error updating account balance on transaction create:', err);
   }
 });
 
+// Reverse balance when a transaction is deleted
 transactionSchema.post('findOneAndDelete', async function (doc) {
-  if (doc) {
+  if (!doc) return;
+  try {
     const Account = mongoose.model('Account');
     const account = await Account.findById(doc.account);
-
     if (account) {
-      let balanceChange = 0;
-      if (doc.type === 'INCOME') balanceChange = -doc.amount;
-      if (doc.type === 'EXPENSE' || doc.type === 'INVESTMENT' || doc.type === 'TAX') balanceChange = doc.amount;
-      account.balance += balanceChange;
+      account.balance -= getBalanceDelta(doc.type, doc.amount);
       await account.save();
     }
+  } catch (err) {
+    console.error('Error reversing account balance on transaction delete:', err);
   }
 });
 
