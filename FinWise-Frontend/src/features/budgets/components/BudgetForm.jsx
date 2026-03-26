@@ -175,7 +175,7 @@ const BudgetForm = ({ budget, onClose }) => {
                 </label>
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  {...register('month', { valueAsNumber: true })}
+                  {...register('month')}
                 >
                   <option value="1">January</option>
                   <option value="2">February</option>
