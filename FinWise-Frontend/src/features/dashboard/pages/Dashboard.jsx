@@ -16,6 +16,7 @@ import Button from '../../../components/ui/Button'
 import { formatCurrency, formatDate } from '../../../utils/formatters'
 import TransactionForm from '../../transactions/components/TransactionForm'
 import { useQueryClient } from '@tanstack/react-query'
+import SpendingForecast from '../components/SpendingForecast';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const PIE_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
@@ -244,6 +245,8 @@ const Dashboard = () => {
           )}
         </Card>
       </div>
+
+       <SpendingForecast />
 
       {/* ── Bottom Row: Recent Transactions + Upcoming Bills + Quick Actions ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
