@@ -180,8 +180,6 @@ export const changePassword = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  // JWT is stateless — logout is handled client-side by discarding the token.
-  // This endpoint exists so the frontend has a consistent API surface.
   res.status(200).json({
     success: true,
     message: 'Logged out successfully'

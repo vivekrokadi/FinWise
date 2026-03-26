@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
 
-// Normalize category to lowercase for consistent matching
 const lc = (s) => (typeof s === 'string' ? s.toLowerCase() : s);
 
 export const getBudgets = async (req, res) => {
@@ -119,7 +118,7 @@ export const createOrUpdateBudget = async (req, res) => {
     const budgetData = {
       amount,
       period: resolvedPeriod,
-      category: lc(category), // normalize category
+      category: lc(category),
       year: resolvedYear,
       month: resolvedMonth,
       user: new mongoose.Types.ObjectId(req.user.id),
@@ -217,7 +216,6 @@ export const getBudgetAlerts = async (req, res) => {
             $match: {
               user: new mongoose.Types.ObjectId(req.user.id),
               type: 'EXPENSE',
-              // Use $toLower for consistent case-insensitive matching
               $expr: { $eq: [{ $toLower: '$category' }, lc(budget.category)] },
               date: { $gte: startOfMonth, $lte: endOfMonth }
             }
@@ -281,7 +279,6 @@ export const getBudgetStats = async (req, res) => {
             $match: {
               user: new mongoose.Types.ObjectId(req.user.id),
               type: 'EXPENSE',
-              // Use $toLower for consistent case-insensitive matching
               $expr: { $eq: [{ $toLower: '$category' }, lc(budget.category)] },
               date: { $gte: startOfMonth, $lte: endOfMonth }
             }

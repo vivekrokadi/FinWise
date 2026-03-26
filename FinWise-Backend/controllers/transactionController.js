@@ -128,7 +128,6 @@ export const createTransaction = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Amount must be a positive number' });
     }
 
-    // Verify account belongs to the logged-in user
     const account = await Account.findOne({ _id: accountId, user: new mongoose.Types.ObjectId(req.user.id) });
     if (!account) {
       return res.status(404).json({ success: false, message: 'Account not found' });
@@ -185,7 +184,7 @@ export const createTransaction = async (req, res) => {
 
 export const updateTransaction = async (req, res) => {
   try {
-    // Find the transaction and verify ownership
+ 
     const existing = await Transaction.findOne({
       _id: req.params.id,
       user: new mongoose.Types.ObjectId(req.user.id)
@@ -197,7 +196,6 @@ export const updateTransaction = async (req, res) => {
 
     const update = { ...req.body };
 
-    // Validate and normalize type if being updated
     if (update.type) {
       update.type = normalizeType(update.type);
       const validTypes = ['INCOME', 'EXPENSE', 'INVESTMENT', 'TAX'];
@@ -222,7 +220,6 @@ export const updateTransaction = async (req, res) => {
       update.investmentType = String(update.investmentType).trim().toUpperCase();
     }
 
-    // Prevent changing the owner or account to another user's account
     delete update.user;
     if (update.account) {
       const account = await Account.findOne({ _id: update.account, user: new mongoose.Types.ObjectId(req.user.id) });
@@ -231,8 +228,6 @@ export const updateTransaction = async (req, res) => {
       }
     }
 
-    // Manually adjust account balance for the difference
-    // Old balance delta (to reverse) and new balance delta (to apply)
     const oldType = existing.type;
     const oldAmount = existing.amount;
     const oldAccount = existing.account.toString();
@@ -253,9 +248,8 @@ export const updateTransaction = async (req, res) => {
       { new: true, runValidators: true }
     ).populate('account', 'name type');
 
-    // Adjust account balances after update
     if (oldAccount === newAccount) {
-      // Same account: reverse old delta, apply new delta
+   
       const Account = (await import('../models/Account.js')).default;
       const account = await Account.findById(oldAccount);
       if (account) {
@@ -264,7 +258,7 @@ export const updateTransaction = async (req, res) => {
         await account.save();
       }
     } else {
-      // Different accounts: reverse from old, apply to new
+    
       const Account = (await import('../models/Account.js')).default;
       const [oldAcc, newAcc] = await Promise.all([
         Account.findById(oldAccount),
@@ -301,8 +295,6 @@ export const deleteTransaction = async (req, res) => {
     if (!transaction) {
       return res.status(404).json({ success: false, message: 'Transaction not found' });
     }
-
-    // findOneAndDelete triggers the post hook that reverses account balance
     await Transaction.findOneAndDelete({ _id: req.params.id, user: new mongoose.Types.ObjectId(req.user.id) });
 
     res.status(200).json({ success: true, message: 'Transaction deleted successfully' });
@@ -320,7 +312,6 @@ export const bulkDeleteTransactions = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide transaction IDs to delete' });
     }
 
-    // Verify all transactions belong to this user
     const userTransactions = await Transaction.find({
       _id: { $in: transactionIds },
       user: new mongoose.Types.ObjectId(req.user.id)
@@ -330,8 +321,6 @@ export const bulkDeleteTransactions = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Some transactions do not belong to you' });
     }
 
-    // Delete one by one so the findOneAndDelete post hook fires for each
-    // This ensures account balances are correctly reversed for every transaction
     for (const _id of transactionIds) {
       await Transaction.findOneAndDelete({ _id, user: new mongoose.Types.ObjectId(req.user.id) });
     }

@@ -10,18 +10,15 @@ export const getDashboardStats = async (req, res) => {
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const now = new Date();
 
-    // ── Rolling 30-day window (never shows all zeros during a demo) ──────────
     const rolling30Start = new Date(now);
     rolling30Start.setDate(rolling30Start.getDate() - 30);
     rolling30Start.setHours(0, 0, 0, 0);
     const rolling30End = new Date(now);
     rolling30End.setHours(23, 59, 59, 999);
 
-    // ── Total balance across all accounts ────────────────────────────────────
     const accounts = await Account.find({ user: userObjectId });
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
 
-    // ── Rolling 30-day income / expenses / investments ───────────────────────
     const rollingStats = await Transaction.aggregate([
       {
         $match: {
@@ -42,8 +39,6 @@ export const getDashboardStats = async (req, res) => {
     const monthlyExpenses = getTotal('EXPENSE');
     const monthlyInvestments = getTotal('INVESTMENT');
 
-    // ── 6-month monthly trend (for bar chart) ────────────────────────────────
-    // Build array of last 6 months: { year, month, label }
     const months = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -76,7 +71,6 @@ export const getDashboardStats = async (req, res) => {
       }
     ]);
 
-    // Map raw aggregate into per-month objects
     const monthlyTrend = months.map(({ year, month, label }) => {
       const income = trendRaw.find(
         (r) => r._id.year === year && r._id.month === month && r._id.type === 'INCOME'
@@ -87,7 +81,6 @@ export const getDashboardStats = async (req, res) => {
       return { label, income, expense, net: income - expense };
     });
 
-    // ── Expense category breakdown (last 30 days, for pie chart) ─────────────
     const categoryBreakdown = await Transaction.aggregate([
       {
         $match: {
@@ -104,16 +97,14 @@ export const getDashboardStats = async (req, res) => {
         }
       },
       { $sort: { total: -1 } },
-      { $limit: 6 } // top 6 categories for chart readability
+      { $limit: 6 } 
     ]);
 
-    // ── Recent 5 transactions ─────────────────────────────────────────────────
     const recentTransactions = await Transaction.find({ user: userObjectId })
       .populate('account', 'name type')
       .sort({ date: -1 })
       .limit(5);
 
-    // ── Upcoming recurring bills ──────────────────────────────────────────────
     const upcomingBills = await Transaction.find({
       user: userObjectId,
       isRecurring: true,
@@ -122,7 +113,6 @@ export const getDashboardStats = async (req, res) => {
       .sort({ nextRecurringDate: 1 })
       .limit(5);
 
-    // ── Budget usage (current calendar month) ────────────────────────────────
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
@@ -135,7 +125,6 @@ export const getDashboardStats = async (req, res) => {
 
     const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
 
-    // Get actual spending against budgets this calendar month
     const monthlyExpenseForBudget = await Transaction.aggregate([
       {
         $match: {
@@ -154,7 +143,7 @@ export const getDashboardStats = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        // Summary stats (rolling 30 days)
+        
         totalBalance,
         monthlyIncome,
         monthlyExpenses,
@@ -164,20 +153,16 @@ export const getDashboardStats = async (req, res) => {
           ? parseFloat(((monthlyIncome - monthlyExpenses) / monthlyIncome * 100).toFixed(1))
           : 0,
 
-        // Budget
         budgetUsage,
         totalBudget,
 
-        // Charts
-        monthlyTrend,       // 6-month income vs expense bar chart
-        categoryBreakdown,  // Expense pie chart
+        monthlyTrend,
+        categoryBreakdown,  
 
-        // Lists
         recentTransactions,
         upcomingBills,
         accountCount: accounts.length,
 
-        // Period label for UI
         period: 'Last 30 days'
       }
     });
