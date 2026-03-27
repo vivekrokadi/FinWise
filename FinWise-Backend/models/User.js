@@ -43,6 +43,24 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
+  },
+
+  // ── Notification preferences ────────────────────────────────────────────────
+  notificationPrefs: {
+    budgetAlerts: {
+      type: Boolean,
+      default: true         // email when budget threshold is crossed
+    },
+    weeklyReport: {
+      type: Boolean,
+      default: true         // weekly financial summary email
+    },
+    weeklyReportDay: {
+      type: Number,
+      default: 1,           // 0=Sun, 1=Mon … 6=Sat
+      min: 0,
+      max: 6
+    }
   }
 }, {
   timestamps: true
@@ -62,7 +80,6 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 // Cascade delete accounts, transactions, and budgets when user is deleted
-// Uses deleteMany directly since findByIdAndDelete doesn't trigger 'remove' middleware
 userSchema.pre('findOneAndDelete', async function (next) {
   const user = await this.model.findOne(this.getFilter());
   if (user) {
