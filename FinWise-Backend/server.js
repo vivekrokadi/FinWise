@@ -8,12 +8,13 @@ import { errorHandler } from './middleware/errorHandler.js';
 import limiter from './middleware/rateLimit.js';
 
 // Routes
-import authRoutes from './routes/auth.js';
-import accountRoutes from './routes/accounts.js';
-import transactionRoutes from './routes/transactions.js';
-import budgetRoutes from './routes/budgets.js';
-import aiRoutes from './routes/ai.js';
-import userRoutes from './routes/users.js';
+import authRoutes         from './routes/auth.js';
+import accountRoutes      from './routes/accounts.js';
+import transactionRoutes  from './routes/transactions.js';
+import budgetRoutes       from './routes/budgets.js';
+import aiRoutes           from './routes/ai.js';
+import userRoutes         from './routes/users.js';
+import notificationRoutes from './routes/notifications.js';
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ app.use(helmet());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS — reads allowed origin from env so it works in both dev and prod
+// CORS
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim());
@@ -34,7 +35,6 @@ const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, Postman)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -62,12 +62,13 @@ app.get('/api/health', (req, res) => {
 });
 
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/accounts', accountRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/auth',          authRoutes);
+app.use('/api/accounts',      accountRoutes);
+app.use('/api/transactions',  transactionRoutes);
+app.use('/api/budgets',       budgetRoutes);
+app.use('/api/ai',            aiRoutes);
+app.use('/api/users',         userRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -80,20 +81,45 @@ app.use((req, res) => {
 // Global error handler (must be last)
 app.use(errorHandler);
 
-// Database + server startup
+// ─── Database + server startup ────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/finwise')
   .then(() => {
     console.log('MongoDB connected');
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     });
+
+    // ── Cron job: check every hour if any weekly reports are due ─────────────
+    // Runs at the top of every hour. sendWeeklyReportsToAll() internally checks
+    // whether today matches each user's preferred report day.
+    startCronJobs();
   })
   .catch((err) => {
     console.error('MongoDB connection error:', err);
     process.exit(1);
   });
+
+async function startCronJobs() {
+  try {
+    const { sendWeeklyReportsToAll } = await import('./controllers/notificationController.js');
+
+    // Run once on startup then every hour
+    const runJob = () => {
+      sendWeeklyReportsToAll().catch(err =>
+        console.error('[Cron] Weekly report error:', err.message)
+      );
+    };
+
+    runJob(); // immediate check on startup
+    setInterval(runJob, 60 * 60 * 1000); // every hour
+    console.log('[Cron] Weekly report job scheduled (checks every hour)');
+  } catch (err) {
+    console.error('[Cron] Failed to start cron jobs:', err.message);
+  }
+}
 
 export default app;
