@@ -1,12 +1,10 @@
-// FinWise-Frontend/src/utils/constants.js - UPDATED
+// FinWise-Frontend/src/utils/constants.js
 /**
  * Application constants
  * Based on backend contract analysis
  */
 
-// ==========================================
-// ACCOUNT TYPES
-// ==========================================
+// Account types
 export const ACCOUNT_TYPES = [
   { value: 'CURRENT', label: 'Current' },
   { value: 'SAVINGS', label: 'Savings' },
@@ -14,9 +12,7 @@ export const ACCOUNT_TYPES = [
   { value: 'CREDIT_CARD', label: 'Credit Card' }
 ]
 
-// ==========================================
-// TRANSACTION TYPES
-// ==========================================
+// Transaction types
 export const TRANSACTION_TYPES = [
   { value: 'INCOME', label: 'Income' },
   { value: 'EXPENSE', label: 'Expense' },
@@ -24,9 +20,7 @@ export const TRANSACTION_TYPES = [
   { value: 'TAX', label: 'Tax' }
 ]
 
-// ==========================================
-// INVESTMENT TYPES
-// ==========================================
+// Investment types
 export const INVESTMENT_TYPES = [
   { value: 'STOCKS', label: 'Stocks' },
   { value: 'CRYPTO', label: 'Crypto' },
@@ -36,9 +30,7 @@ export const INVESTMENT_TYPES = [
   { value: 'OTHER', label: 'Other' }
 ]
 
-// ==========================================
-// RECURRING INTERVALS
-// ==========================================
+// Recurring intervals
 export const RECURRING_INTERVALS = [
   { value: 'DAILY', label: 'Daily' },
   { value: 'WEEKLY', label: 'Weekly' },
@@ -46,26 +38,20 @@ export const RECURRING_INTERVALS = [
   { value: 'YEARLY', label: 'Yearly' }
 ]
 
-// ==========================================
-// BUDGET PERIODS
-// ==========================================
+// Budget periods
 export const BUDGET_PERIODS = [
   { value: 'MONTHLY', label: 'Monthly' },
   { value: 'YEARLY', label: 'Yearly' }
 ]
 
-// ==========================================
-// RISK TOLERANCE LEVELS
-// ==========================================
+// Risk tolerance levels
 export const RISK_LEVELS = [
   { value: 'LOW', label: 'Low', color: 'green' },
   { value: 'MODERATE', label: 'Moderate', color: 'yellow' },
   { value: 'HIGH', label: 'High', color: 'red' }
 ]
 
-// ==========================================
-// CURRENCY OPTIONS
-// ==========================================
+// Currency options
 export const CURRENCIES = [
   { value: 'RUPEES', label: '₹ Rupees' },
   { value: 'USD', label: '$ Dollar' },
@@ -73,9 +59,7 @@ export const CURRENCIES = [
   { value: 'GBP', label: '£ Pound' }
 ]
 
-// ==========================================
-// DEFAULT COLORS
-// ==========================================
+// Default colors
 export const DEFAULT_COLORS = {
   PRIMARY: '#3B82F6',
   SUCCESS: '#22c55e',
@@ -85,23 +69,17 @@ export const DEFAULT_COLORS = {
   GRAY: '#6B7280'
 }
 
-// ==========================================
-// ALERT THRESHOLDS
-// ==========================================
+// Alert threshold options
 export const ALERT_THRESHOLDS = [50, 60, 70, 80, 90, 100]
 
-// ==========================================
-// PAGINATION
-// ==========================================
+// Pagination defaults
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
   DEFAULT_LIMIT: 10,
   PAGE_SIZES: [10, 25, 50, 100]
 }
 
-// ==========================================
-// LOCAL STORAGE KEYS
-// ==========================================
+// Local storage keys
 export const STORAGE_KEYS = {
   TOKEN: 'finwise_token',
   USER: 'finwise_user',
@@ -110,9 +88,7 @@ export const STORAGE_KEYS = {
   PREFERENCES: 'finwise_preferences'
 }
 
-// ==========================================
-// HTTP STATUS CODES
-// ==========================================
+// HTTP Status codes
 export const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,
@@ -125,86 +101,242 @@ export const HTTP_STATUS = {
 }
 
 // ==========================================
-// API ROUTES - PHASE 1 FEATURES
+// CATEGORIES
+// ==========================================
+export const CATEGORIES = {
+  EXPENSE: [
+    {
+      value: 'food',
+      label: 'Food & Dining',
+      subcategories: [
+        { value: 'groceries', label: 'Groceries' },
+        { value: 'restaurants', label: 'Restaurants' },
+        { value: 'coffee', label: 'Coffee & Tea' },
+        { value: 'takeaway', label: 'Takeaway / Delivery' },
+        { value: 'snacks', label: 'Snacks' }
+      ]
+    },
+    {
+      value: 'transport',
+      label: 'Transport',
+      subcategories: [
+        { value: 'fuel', label: 'Fuel' },
+        { value: 'cab', label: 'Cab / Auto' },
+        { value: 'metro', label: 'Metro / Bus' },
+        { value: 'parking', label: 'Parking' },
+        { value: 'maintenance', label: 'Vehicle Maintenance' }
+      ]
+    },
+    {
+      value: 'shopping',
+      label: 'Shopping',
+      subcategories: [
+        { value: 'clothing', label: 'Clothing & Apparel' },
+        { value: 'electronics', label: 'Electronics' },
+        { value: 'home', label: 'Home & Furniture' },
+        { value: 'accessories', label: 'Accessories' },
+        { value: 'gifts', label: 'Gifts' }
+      ]
+    },
+    {
+      value: 'entertainment',
+      label: 'Entertainment',
+      subcategories: [
+        { value: 'movies', label: 'Movies & OTT' },
+        { value: 'games', label: 'Games' },
+        { value: 'sports', label: 'Sports & Fitness' },
+        { value: 'travel', label: 'Travel & Tourism' },
+        { value: 'events', label: 'Events & Concerts' }
+      ]
+    },
+    {
+      value: 'utilities',
+      label: 'Utilities & Bills',
+      subcategories: [
+        { value: 'electricity', label: 'Electricity' },
+        { value: 'water', label: 'Water' },
+        { value: 'internet', label: 'Internet & Phone' },
+        { value: 'gas', label: 'Gas / LPG' },
+        { value: 'subscriptions', label: 'Subscriptions' }
+      ]
+    },
+    {
+      value: 'healthcare',
+      label: 'Healthcare',
+      subcategories: [
+        { value: 'doctor', label: 'Doctor / Hospital' },
+        { value: 'medicines', label: 'Medicines' },
+        { value: 'insurance', label: 'Health Insurance' },
+        { value: 'gym', label: 'Gym & Wellness' },
+        { value: 'dental', label: 'Dental' }
+      ]
+    },
+    {
+      value: 'education',
+      label: 'Education',
+      subcategories: [
+        { value: 'fees', label: 'Tuition / Course Fees' },
+        { value: 'books', label: 'Books & Stationery' },
+        { value: 'coaching', label: 'Coaching / Tutoring' },
+        { value: 'exams', label: 'Exam Fees' }
+      ]
+    },
+    {
+      value: 'housing',
+      label: 'Housing',
+      subcategories: [
+        { value: 'rent', label: 'Rent' },
+        { value: 'emi', label: 'Home Loan EMI' },
+        { value: 'maintenance_soc', label: 'Society Maintenance' },
+        { value: 'repairs', label: 'Repairs' }
+      ]
+    },
+    {
+      value: 'personal',
+      label: 'Personal Care',
+      subcategories: [
+        { value: 'salon', label: 'Salon & Grooming' },
+        { value: 'skincare', label: 'Skincare & Cosmetics' },
+        { value: 'laundry', label: 'Laundry / Dry Clean' }
+      ]
+    },
+    {
+      value: 'other',
+      label: 'Other',
+      subcategories: [
+        { value: 'miscellaneous', label: 'Miscellaneous' },
+        { value: 'charity', label: 'Charity / Donation' },
+        { value: 'fines', label: 'Fines & Penalties' }
+      ]
+    }
+  ],
+
+  INCOME: [
+    {
+      value: 'salary',
+      label: 'Salary',
+      subcategories: [
+        { value: 'monthly_salary', label: 'Monthly Salary' },
+        { value: 'bonus', label: 'Bonus' },
+        { value: 'allowance', label: 'Allowance' },
+        { value: 'arrears', label: 'Arrears' }
+      ]
+    },
+    {
+      value: 'freelance',
+      label: 'Freelance / Business',
+      subcategories: [
+        { value: 'project', label: 'Project Payment' },
+        { value: 'consulting', label: 'Consulting' },
+        { value: 'commission', label: 'Commission' }
+      ]
+    },
+    {
+      value: 'investment_income',
+      label: 'Investment Returns',
+      subcategories: [
+        { value: 'dividends', label: 'Dividends' },
+        { value: 'interest', label: 'Interest' },
+        { value: 'capital_gains', label: 'Capital Gains' },
+        { value: 'rental_income', label: 'Rental Income' }
+      ]
+    },
+    {
+      value: 'gifts_received',
+      label: 'Gifts & Transfers',
+      subcategories: [
+        { value: 'gift_money', label: 'Gift Money' },
+        { value: 'transfer_in', label: 'Transfer Received' },
+        { value: 'refund', label: 'Refund' }
+      ]
+    },
+    {
+      value: 'other_income',
+      label: 'Other Income',
+      subcategories: [
+        { value: 'cashback', label: 'Cashback / Rewards' },
+        { value: 'misc_income', label: 'Miscellaneous' }
+      ]
+    }
+  ],
+
+  INVESTMENT: [
+    {
+      value: 'investment',
+      label: 'Investment',
+      subcategories: [
+        { value: 'sip', label: 'SIP / Mutual Fund' },
+        { value: 'stocks_buy', label: 'Stock Purchase' },
+        { value: 'fd', label: 'Fixed Deposit' },
+        { value: 'ppf', label: 'PPF / NPS' },
+        { value: 'crypto_buy', label: 'Crypto Purchase' },
+        { value: 'real_estate_inv', label: 'Real Estate' },
+        { value: 'gold', label: 'Gold / Bonds' }
+      ]
+    }
+  ],
+
+  TAX: [
+    {
+      value: 'tax',
+      label: 'Tax',
+      subcategories: [
+        { value: 'income_tax', label: 'Income Tax (Advance)' },
+        { value: 'tds', label: 'TDS' },
+        { value: 'gst', label: 'GST' },
+        { value: 'property_tax', label: 'Property Tax' },
+        { value: 'professional_tax', label: 'Professional Tax' }
+      ]
+    }
+  ]
+}
+
+// ==========================================
+// API ROUTES
 // ==========================================
 export const API_ROUTES = {
-  // ========== AUTH ==========
+  // Auth
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
   LOGOUT: '/auth/logout',
-  REFRESH_TOKEN: '/auth/refresh',
   CURRENT_USER: '/users/me',
 
-  // ========== TRANSACTIONS ==========
+  // Transactions
   TRANSACTIONS: '/transactions',
-  GET_TRANSACTION: '/transactions/:id',
   CREATE_TRANSACTION: '/transactions',
   UPDATE_TRANSACTION: '/transactions/:id',
   DELETE_TRANSACTION: '/transactions/:id',
-  SEARCH_TRANSACTIONS: '/transactions/search',
 
-  // ========== ACCOUNTS ==========
+  // Accounts
   ACCOUNTS: '/accounts',
-  GET_ACCOUNT: '/accounts/:id',
   CREATE_ACCOUNT: '/accounts',
   UPDATE_ACCOUNT: '/accounts/:id',
   DELETE_ACCOUNT: '/accounts/:id',
 
-  // ========== BUDGETS ==========
+  // Budgets
   BUDGETS: '/budgets',
-  GET_BUDGET: '/budgets/:id',
   CREATE_BUDGET: '/budgets',
   UPDATE_BUDGET: '/budgets/:id',
   DELETE_BUDGET: '/budgets/:id',
 
-  // ========== ML FEATURES (PHASE 1) ==========
+  // ML Features
   ML_TRAIN: '/ml/train',
   ML_PREDICT: '/ml/predict',
   ML_ANOMALIES: '/ml/anomalies',
   ML_ANOMALY_STATS: '/ml/anomaly-stats',
 
-  // ========== NOTIFICATIONS (PHASE 1) ==========
+  // Notifications
   NOTIFICATIONS: '/notifications',
-  GET_NOTIFICATIONS: '/notifications',
   MARK_AS_READ: '/notifications/:id/read',
   MARK_ALL_READ: '/notifications/read/all',
   DELETE_NOTIFICATION: '/notifications/:id',
   CHECK_BUDGETS: '/notifications/check-budgets',
 
-  // ========== TAX FEATURES (PHASE 1) ==========
+  // Tax
   TAX_CALCULATE: '/tax/calculate',
   TAX_REPORT: '/tax/report',
-  TAX_OPPORTUNITIES: '/tax/opportunities',
-
-  // ========== AI INSIGHTS ==========
-  AI_INSIGHTS: '/ai/insights',
-  AI_RECOMMENDATIONS: '/ai/recommendations',
-  AI_TAX_ANALYSIS: '/ai/tax-analysis',
-
-  // ========== USER SETTINGS ==========
-  USER_PROFILE: '/users/profile',
-  UPDATE_PROFILE: '/users/profile',
-  CHANGE_PASSWORD: '/users/password',
-  NOTIFICATION_PREFERENCES: '/users/preferences',
-  UPDATE_PREFERENCES: '/users/preferences'
+  TAX_OPPORTUNITIES: '/tax/opportunities'
 }
-
-// ==========================================
-// CATEGORY OPTIONS
-// ==========================================
-export const EXPENSE_CATEGORIES = [
-  { value: 'food', label: '🍔 Food & Dining', color: '#FF6B6B' },
-  { value: 'transport', label: '🚗 Transport', color: '#4ECDC4' },
-  { value: 'shopping', label: '🛍️ Shopping', color: '#FFE66D' },
-  { value: 'entertainment', label: '🎬 Entertainment', color: '#95E1D3' },
-  { value: 'utilities', label: '💡 Utilities', color: '#A8D8EA' },
-  { value: 'healthcare', label: '⚕️ Healthcare', color: '#AA96DA' },
-  { value: 'education', label: '📚 Education', color: '#FCBAD3' },
-  { value: 'travel', label: '✈️ Travel', color: '#F7DC6F' },
-  { value: 'investment', label: '📈 Investment', color: '#52C77F' },
-  { value: 'subscriptions', label: '📱 Subscriptions', color: '#85C1E9' },
-  { value: 'other', label: '📌 Other', color: '#BDC3C7' }
-]
 
 // ==========================================
 // SEVERITY LEVELS
@@ -214,84 +346,6 @@ export const SEVERITY_LEVELS = {
   MEDIUM: { value: 'MEDIUM', label: 'Medium', color: '#F39C12', bgColor: '#FEF5E7' },
   HIGH: { value: 'HIGH', label: 'High', color: '#E74C3C', bgColor: '#FADBD8' },
   CRITICAL: { value: 'CRITICAL', label: 'Critical', color: '#C0392B', bgColor: '#F5B7B1' }
-}
-
-// ==========================================
-// NOTIFICATION TYPES
-// ==========================================
-export const NOTIFICATION_TYPES = {
-  BUDGET_EXCEEDED: 'Budget Exceeded',
-  BUDGET_WARNING: 'Budget Warning',
-  BUDGET_CAUTION: 'Budget Caution',
-  TRANSACTION_ALERT: 'Transaction Alert',
-  SAVINGS_MILESTONE: 'Savings Milestone',
-  INVESTMENT_ALERT: 'Investment Alert'
-}
-
-// ==========================================
-// TAX SECTIONS
-// ==========================================
-export const TAX_SECTIONS = {
-  '80C': { name: 'Section 80C', limit: 150000, description: 'Life Insurance, PPF, ELSS' },
-  '80D': { name: 'Section 80D', limit: 100000, description: 'Medical Insurance' },
-  '80E': { name: 'Section 80E', limit: 50000, description: 'Education Loan Interest' },
-  '80G': { name: 'Section 80G', limit: null, description: 'Charitable Donations (50% of income)' },
-  '80TTA': { name: 'Section 80TTA', limit: 10000, description: 'Savings Account Interest' }
-}
-
-// ==========================================
-// ERROR MESSAGES
-// ==========================================
-export const ERROR_MESSAGES = {
-  UNAUTHORIZED: 'Unauthorized. Please login again.',
-  FORBIDDEN: 'You do not have permission to access this resource.',
-  NOT_FOUND: 'The requested resource was not found.',
-  VALIDATION_ERROR: 'Please check your input and try again.',
-  SERVER_ERROR: 'Something went wrong. Please try again later.',
-  NETWORK_ERROR: 'Network error. Please check your connection.',
-  SESSION_EXPIRED: 'Your session has expired. Please login again.'
-}
-
-// ==========================================
-// SUCCESS MESSAGES
-// ==========================================
-export const SUCCESS_MESSAGES = {
-  LOGIN: 'Login successful!',
-  LOGOUT: 'Logged out successfully!',
-  REGISTRATION: 'Registration successful!',
-  PROFILE_UPDATED: 'Profile updated successfully!',
-  TRANSACTION_CREATED: 'Transaction added successfully!',
-  TRANSACTION_UPDATED: 'Transaction updated successfully!',
-  TRANSACTION_DELETED: 'Transaction deleted successfully!',
-  BUDGET_CREATED: 'Budget created successfully!',
-  BUDGET_UPDATED: 'Budget updated successfully!',
-  BUDGET_DELETED: 'Budget deleted successfully!'
-}
-
-// ==========================================
-// FEATURE FLAGS
-// ==========================================
-export const FEATURE_FLAGS = {
-  ENABLE_ML_PREDICTION: true,
-  ENABLE_ANOMALY_DETECTION: true,
-  ENABLE_TAX_PLANNING: true,
-  ENABLE_BUDGET_ALERTS: true,
-  ENABLE_AI_INSIGHTS: true,
-  ENABLE_NOTIFICATIONS: true,
-  ENABLE_SOCIAL_SHARING: false,
-  ENABLE_DARK_MODE: true
-}
-
-// ==========================================
-// DATE FORMATS
-// ==========================================
-export const DATE_FORMATS = {
-  SHORT: 'MMM dd, yyyy',
-  LONG: 'MMMM dd, yyyy',
-  TIME: 'hh:mm a',
-  FULL: 'MMMM dd, yyyy hh:mm a',
-  ISO: 'yyyy-MM-dd',
-  ISO_TIME: 'yyyy-MM-dd HH:mm:ss'
 }
 
 // ==========================================
@@ -314,12 +368,12 @@ export const CHART_COLORS = {
 }
 
 // ==========================================
-// VALIDATION RULES
+// FEATURE FLAGS
 // ==========================================
-export const VALIDATION_RULES = {
-  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  PASSWORD_MIN_LENGTH: 6,
-  USERNAME_MIN_LENGTH: 3,
-  TRANSACTION_AMOUNT_MIN: 0.01,
-  DESCRIPTION_MAX_LENGTH: 200
+export const FEATURE_FLAGS = {
+  ENABLE_ML_PREDICTION: true,
+  ENABLE_ANOMALY_DETECTION: true,
+  ENABLE_TAX_PLANNING: true,
+  ENABLE_BUDGET_ALERTS: true,
+  ENABLE_NOTIFICATIONS: true
 }
