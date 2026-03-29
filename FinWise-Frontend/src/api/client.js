@@ -1,3 +1,4 @@
+// FinWise-Frontend/src/api/client.js
 import { STORAGE_KEYS, HTTP_STATUS } from '../utils/constants'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
@@ -58,6 +59,15 @@ class ApiClient {
     return this.handleResponse(response)
   }
 
+  async patch(endpoint, body) {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(body)
+    })
+    return this.handleResponse(response)
+  }
+
   async put(endpoint, body) {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'PUT',
@@ -67,7 +77,6 @@ class ApiClient {
     return this.handleResponse(response)
   }
 
-  // body is optional — needed for bulk-delete which sends { transactionIds: [...] }
   async delete(endpoint, body) {
     const config = {
       method: 'DELETE',
