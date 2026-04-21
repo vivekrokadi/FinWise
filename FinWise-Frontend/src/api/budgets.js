@@ -64,7 +64,8 @@ export const getBudgetAlerts = async () => {
 /**
  * Get budget statistics for current month
  */
-export const getBudgetStats = async () => {
-  const response = await apiClient.get('/budgets/stats')
+export const getBudgetStats = async (year) => {
+  const query = year ? `?year=${year}` : ''
+  const response = await apiClient.get(`/budgets/stats${query}`)
   return response.data // Returns { overall, byCategory }
 }

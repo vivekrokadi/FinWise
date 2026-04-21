@@ -60,10 +60,10 @@ export const useBudgetAlerts = () => {
 /**
  * Hook for budget stats
  */
-export const useBudgetStats = () => {
+export const useBudgetStats = (year) => {
   return useQuery({
-    queryKey: budgetKeys.stats(),
-    queryFn: getBudgetStats,
+    queryKey: [...budgetKeys.stats(), { year }],
+    queryFn: () => getBudgetStats(year),
     staleTime: 5 * 60 * 1000
   })
 }

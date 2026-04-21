@@ -17,7 +17,7 @@ const Budgets = () => {
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const { data: budgets, isLoading: budgetsLoading, error: budgetsError } = useBudgets(selectedYear)
-  const { data: stats, isLoading: statsLoading } = useBudgetStats()
+  const { data: stats, isLoading: statsLoading } = useBudgetStats(selectedYear)
   const { data: alerts, refetch: refetchAlerts } = useBudgetAlerts()
   const deleteMutation = useDeleteBudget()
 

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Budget from '../models/Budget.js';
 import Transaction from '../models/Transaction.js';
 
+// Normalize category to lowercase for consistent matching
 const lc = (s) => (typeof s === 'string' ? s.toLowerCase() : s);
 
 export const getBudgets = async (req, res) => {
@@ -118,7 +119,7 @@ export const createOrUpdateBudget = async (req, res) => {
     const budgetData = {
       amount,
       period: resolvedPeriod,
-      category: lc(category),
+      category: lc(category), // normalize category
       year: resolvedYear,
       month: resolvedMonth,
       user: new mongoose.Types.ObjectId(req.user.id),
@@ -216,6 +217,7 @@ export const getBudgetAlerts = async (req, res) => {
             $match: {
               user: new mongoose.Types.ObjectId(req.user.id),
               type: 'EXPENSE',
+              // Use $toLower for consistent case-insensitive matching
               $expr: { $eq: [{ $toLower: '$category' }, lc(budget.category)] },
               date: { $gte: startOfMonth, $lte: endOfMonth }
             }
@@ -259,50 +261,53 @@ export const getBudgetAlerts = async (req, res) => {
 
 export const getBudgetStats = async (req, res) => {
   try {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
+    // Accept year from query so the frontend can match the selected year
+    const { year = new Date().getFullYear() } = req.query;
+    const selectedYear = parseInt(year);
 
+    // Find all budgets for the selected year (all months)
     const budgets = await Budget.find({
       user: new mongoose.Types.ObjectId(req.user.id),
-      year: currentYear,
-      month: currentMonth
+      year: selectedYear
     });
-
-    const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
-    const endOfMonth = new Date(currentYear, currentMonth, 0);
 
     const statsWithSpending = await Promise.all(
       budgets.map(async (budget) => {
+        // Use each budget\'s own month for the date range
+        const startDate = new Date(budget.year, budget.month - 1, 1);
+        const endDate   = new Date(budget.year, budget.month, 0, 23, 59, 59, 999);
+
         const expenses = await Transaction.aggregate([
           {
             $match: {
               user: new mongoose.Types.ObjectId(req.user.id),
               type: 'EXPENSE',
               $expr: { $eq: [{ $toLower: '$category' }, lc(budget.category)] },
-              date: { $gte: startOfMonth, $lte: endOfMonth }
+              date: { $gte: startDate, $lte: endDate }
             }
           },
           { $group: { _id: null, total: { $sum: '$amount' } } }
         ]);
 
         const currentSpending = expenses[0]?.total || 0;
-        const percentageUsed = budget.amount > 0 ? (currentSpending / budget.amount) * 100 : 0;
+        const percentageUsed  = budget.amount > 0 ? (currentSpending / budget.amount) * 100 : 0;
 
         return {
-          category: budget.category,
-          budgetAmount: budget.amount,
+          category:        budget.category,
+          budgetAmount:    budget.amount,
           currentSpending,
-          percentageUsed: parseFloat(percentageUsed.toFixed(1)),
+          percentageUsed:  parseFloat(percentageUsed.toFixed(1)),
           remainingAmount: Math.max(0, budget.amount - currentSpending),
-          status: percentageUsed >= 100 ? 'EXCEEDED' : percentageUsed >= 80 ? 'WARNING' : 'HEALTHY'
+          status: percentageUsed >= 100 ? 'EXCEEDED'
+                : percentageUsed >= (budget.alertThreshold || 80) ? 'WARNING'
+                : 'HEALTHY'
         };
       })
     );
 
-    const totalBudget = statsWithSpending.reduce((sum, s) => sum + s.budgetAmount, 0);
-    const totalSpending = statsWithSpending.reduce((sum, s) => sum + s.currentSpending, 0);
-    const overallPercentage = totalBudget > 0 ? (totalSpending / totalBudget) * 100 : 0;
+    const totalBudget   = statsWithSpending.reduce((s, b) => s + b.budgetAmount, 0);
+    const totalSpending = statsWithSpending.reduce((s, b) => s + b.currentSpending, 0);
+    const overall       = totalBudget > 0 ? (totalSpending / totalBudget) * 100 : 0;
 
     res.status(200).json({
       success: true,
@@ -310,7 +315,7 @@ export const getBudgetStats = async (req, res) => {
         overall: {
           totalBudget,
           totalSpending,
-          percentageUsed: parseFloat(overallPercentage.toFixed(1)),
+          percentageUsed:  parseFloat(overall.toFixed(1)),
           remainingAmount: Math.max(0, totalBudget - totalSpending)
         },
         byCategory: statsWithSpending
