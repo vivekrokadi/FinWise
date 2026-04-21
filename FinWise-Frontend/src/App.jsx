@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/layout/Layout'
 
+// Landing
+import LandingPage from './features/landing/LandingPage'
+
 // Auth Pages
 import Login from './features/auth/pages/Login'
 import Register from './features/auth/pages/Register'
@@ -23,47 +26,50 @@ import Budgets from './features/budgets/pages/Budgets'
 // AI Features
 import AIInsights from './features/ai/pages/AIInsights'
 
-// Profile
+// Profile & Settings
 import Profile from './features/profile/pages/Profile'
-
 import Settings from './features/settings/pages/Settings'
+
+// 404
 import NotFound from './features/errors/NotFound'
 
 function App() {
   return (
     <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<Login />} />
+      {/* Landing page — shows for unauthenticated, redirects auth users to dashboard */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* Auth */}
+      <Route path="/login"    element={<Login />} />
       <Route path="/register" element={<Register />} />
-      
+
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          
+
           {/* Accounts */}
-          <Route path="/accounts" element={<Accounts />} />
+          <Route path="/accounts"    element={<Accounts />} />
           <Route path="/accounts/:id" element={<AccountDetail />} />
-          
+
           {/* Transactions */}
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/transactions/new" element={<Transactions />} />
-          <Route path="/transactions/:id" element={<TransactionDetail />} />
-          
+          <Route path="/transactions"      element={<Transactions />} />
+          <Route path="/transactions/new"  element={<Transactions />} />
+          <Route path="/transactions/:id"  element={<TransactionDetail />} />
+
           {/* Budgets */}
           <Route path="/budgets" element={<Budgets />} />
-          
-          {/* AI Features */}
+
+          {/* AI */}
           <Route path="/ai/insights" element={<AIInsights />} />
-          
-          {/* User Profile */}
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
+
+          {/* Profile & Settings */}
+          <Route path="/profile"   element={<Profile />} />
+          <Route path="/settings"  element={<Settings />} />
         </Route>
       </Route>
 
-      {/* 404 — must be outside ProtectedRoute so unauthenticated users see it too */}
+      {/* 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
