@@ -1,13 +1,25 @@
-// FinWise-Frontend/src/api/client.js
+import { ENV } from '../config/env'
 import { STORAGE_KEYS, HTTP_STATUS } from '../utils/constants'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-
+/**
+ * Centralized API client with auth header handling
+ * and global error processing
+ */
 class ApiClient {
+  constructor() {
+    this.baseURL = ENV.API_URL
+  }
+
+  /**
+   * Get auth token from localStorage
+   */
   getToken() {
     return localStorage.getItem(STORAGE_KEYS.TOKEN)
   }
 
+  /**
+   * Set auth token
+   */
   setToken(token) {
     if (token) {
       localStorage.setItem(STORAGE_KEYS.TOKEN, token)
@@ -16,22 +28,37 @@ class ApiClient {
     }
   }
 
-  getHeaders(extra = {}) {
+  /**
+   * Get headers with auth token
+   */
+  getHeaders(options = {}) {
     const token = this.getToken()
-    const headers = { 'Content-Type': 'application/json', ...extra }
-    if (token) headers['Authorization'] = `Bearer ${token}`
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
     return headers
   }
 
+  /**
+   * Handle response, check for errors
+   */
   async handleResponse(response) {
     const data = await response.json()
 
+    // Handle 401 Unauthorized globally
     if (response.status === HTTP_STATUS.UNAUTHORIZED) {
       this.setToken(null)
       window.location.href = '/login'
       throw new Error('Session expired. Please login again.')
     }
 
+    // Handle other error statuses
     if (!response.ok) {
       const error = new Error(data.message || 'Something went wrong')
       error.status = response.status
@@ -42,62 +69,80 @@ class ApiClient {
     return data
   }
 
-  async get(endpoint) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+  /**
+   * GET request
+   */
+  async get(endpoint, options = {}) {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'GET',
-      headers: this.getHeaders()
+      headers: this.getHeaders(options),
+      ...options
     })
     return this.handleResponse(response)
   }
 
-  async post(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+  /**
+   * POST request
+   */
+  async post(endpoint, body, options = {}) {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify(body)
+      headers: this.getHeaders(options),
+      body: JSON.stringify(body),
+      ...options
     })
     return this.handleResponse(response)
   }
 
-  async patch(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'PATCH',
-      headers: this.getHeaders(),
-      body: JSON.stringify(body)
-    })
-    return this.handleResponse(response)
-  }
-
-  async put(endpoint, body) {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+  /**
+   * PUT request
+   */
+  async put(endpoint, body, options = {}) {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'PUT',
-      headers: this.getHeaders(),
-      body: JSON.stringify(body)
+      headers: this.getHeaders(options),
+      body: JSON.stringify(body),
+      ...options
     })
     return this.handleResponse(response)
   }
 
-  async delete(endpoint, body) {
+  /**
+   * DELETE request
+   */
+  // body is optional — needed for bulk-delete which sends { transactionIds: [...] }
+  async delete(endpoint, body = null) {
     const config = {
       method: 'DELETE',
       headers: this.getHeaders()
     }
-    if (body) config.body = JSON.stringify(body)
-    const response = await fetch(`${BASE_URL}${endpoint}`, config)
+    if (body) {
+      config.body = JSON.stringify(body)
+    }
+    const response = await fetch(`${this.baseURL}${endpoint}`, config)
     return this.handleResponse(response)
   }
 
-  async postFormData(endpoint, formData) {
+  /**
+   * POST with FormData (for file uploads)
+   */
+  async postFormData(endpoint, formData, options = {}) {
     const token = this.getToken()
     const headers = {}
-    if (token) headers['Authorization'] = `Bearer ${token}`
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       headers,
-      body: formData
+      body: formData,
+      ...options
     })
     return this.handleResponse(response)
   }
 }
 
+// Create singleton instance
 export const apiClient = new ApiClient()

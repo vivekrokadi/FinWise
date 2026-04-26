@@ -136,7 +136,11 @@ export const useBulkDeleteTransactions = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: bulkDeleteTransactions,
+    mutationFn: (payload) => {
+      // Accept either a plain array or { transactionIds: [...] }
+      const ids = Array.isArray(payload) ? payload : (payload?.transactionIds || [])
+      return bulkDeleteTransactions(ids)
+    },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })

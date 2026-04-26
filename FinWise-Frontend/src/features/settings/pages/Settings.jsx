@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
-  Monitor, Bell, Database, Info,
-  Check, Download, RefreshCw, Mail,
+  Bell, Database, Check,
+  Download, RefreshCw, Mail,
   Send, Loader2, AlertCircle, CheckCircle2
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,23 +16,7 @@ import {
   triggerWeeklyReport,
   testEmailConnection
 } from '../../../api/notifications'
-import { ALERT_THRESHOLDS, PAGINATION } from '../../../utils/constants'
-
-// ── Persist display settings in localStorage ──────────────────────────────────
-const SETTINGS_KEY = 'finwise_settings'
-const defaultSettings = {
-  dateFormat:         'medium',
-  pageSize:           10,
-  defaultBudgetAlert: 80,
-  showAccountBalance: true,
-  compactView:        false
-}
-const loadSettings = () => {
-  try {
-    const s = localStorage.getItem(SETTINGS_KEY)
-    return s ? { ...defaultSettings, ...JSON.parse(s) } : defaultSettings
-  } catch { return defaultSettings }
-}
+import { ALERT_THRESHOLDS } from '../../../utils/constants'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 const Section = ({ icon: Icon, title, description, iconColor = 'text-blue-600', iconBg = 'bg-blue-50', children }) => (
@@ -86,7 +70,6 @@ const SelectRow = ({ label, description, value, options, onChange }) => (
   </div>
 )
 
-// ── Email status badge ─────────────────────────────────────────────────────────
 const EmailStatus = ({ status }) => {
   if (status === 'checking') return (
     <span className="flex items-center gap-1 text-xs text-gray-500">
@@ -106,45 +89,28 @@ const EmailStatus = ({ status }) => {
   return null
 }
 
-// ── Main Settings Page ─────────────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────────────────────
 const Settings = () => {
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
-  const [settings, setSettings]           = useState(loadSettings)
-  const [saved, setSaved]                 = useState(false)
-  const [exporting, setExporting]         = useState(false)
-  const [clearingCache, setClearingCache] = useState(false)
-
-  // Notification prefs (server-side)
   const [notifPrefs, setNotifPrefs]       = useState({ budgetAlerts: true, weeklyReport: true, weeklyReportDay: 1 })
   const [savingNotif, setSavingNotif]     = useState(false)
   const [sendingReport, setSendingReport] = useState(false)
-  const [emailStatus, setEmailStatus]     = useState(null) // null | checking | ok | error
+  const [emailStatus, setEmailStatus]     = useState(null)
+  const [exporting, setExporting]         = useState(false)
+  const [clearingCache, setClearingCache] = useState(false)
 
   const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
-  // Load notification prefs from server on mount
   useEffect(() => {
     getNotificationPrefs()
-      .then(data => setNotifPrefs(data.notificationPrefs || notifPrefs))
-      .catch(() => {}) // silent — user may not have prefs yet
+      .then(data => {
+        if (data?.notificationPrefs) setNotifPrefs(data.notificationPrefs)
+      })
+      .catch(() => {})
   }, [])
 
-  // ── Display settings ──────────────────────────────────────────────────────
-  const updateDisplay = (key, value) => {
-    setSettings(prev => ({ ...prev, [key]: value }))
-    setSaved(false)
-  }
-
-  const handleSaveDisplay = () => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-    setSaved(true)
-    toast.success('Display settings saved')
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  // ── Notification prefs ────────────────────────────────────────────────────
   const handleSaveNotif = async () => {
     setSavingNotif(true)
     try {
@@ -157,7 +123,6 @@ const Settings = () => {
     }
   }
 
-  // ── Test email connection ─────────────────────────────────────────────────
   const handleTestEmail = async () => {
     setEmailStatus('checking')
     try {
@@ -168,20 +133,18 @@ const Settings = () => {
     }
   }
 
-  // ── Send weekly report now ────────────────────────────────────────────────
   const handleSendReport = async () => {
     setSendingReport(true)
     try {
       await triggerWeeklyReport()
       toast.success(`Weekly report sent to ${user?.email}`)
     } catch (err) {
-      toast.error(err.message || 'Failed to send report — check email configuration')
+      toast.error(err.message || 'Failed to send report — check email configuration in server .env')
     } finally {
       setSendingReport(false)
     }
   }
 
-  // ── Export CSV ────────────────────────────────────────────────────────────
   const handleExportCSV = async () => {
     setExporting(true)
     try {
@@ -193,12 +156,12 @@ const Settings = () => {
       const rows = transactions.map(t => [
         new Date(t.date).toLocaleDateString('en-IN'),
         t.type,
-        `"${(t.description||'').replace(/"/g,'""')}"`,
+        `"${(t.description || '').replace(/"/g, '""')}"`,
         t.category,
         t.subcategory || '',
-        `"${(t.merchant||'').replace(/"/g,'""')}"`,
+        `"${(t.merchant || '').replace(/"/g, '""')}"`,
         t.type === 'INCOME' ? t.amount : -t.amount,
-        `"${t.account?.name||''}"`,
+        `"${t.account?.name || ''}"`,
         t.taxDeductible ? 'Yes' : 'No',
         t.status
       ])
@@ -212,10 +175,13 @@ const Settings = () => {
       link.click()
       URL.revokeObjectURL(url)
       toast.success(`Exported ${transactions.length} transactions`)
-    } catch { toast.error('Failed to export') } finally { setExporting(false) }
+    } catch {
+      toast.error('Failed to export')
+    } finally {
+      setExporting(false)
+    }
   }
 
-  // ── Clear cache ───────────────────────────────────────────────────────────
   const handleClearCache = () => {
     setClearingCache(true)
     queryClient.clear()
@@ -229,53 +195,10 @@ const Settings = () => {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600 mt-1">Customise your FinWise experience</p>
+        <p className="text-gray-600 mt-1">Manage notifications and your account data</p>
       </div>
 
-      {/* ── Display Preferences ── */}
-      <Section icon={Monitor} title="Display Preferences" description="Control how data is displayed">
-        <SelectRow
-          label="Date Format"
-          value={settings.dateFormat}
-          options={[
-            { value: 'short',  label: '23/03/2026' },
-            { value: 'medium', label: '23 Mar 2026' },
-            { value: 'long',   label: 'Monday, 23 March 2026' }
-          ]}
-          onChange={(v) => updateDisplay('dateFormat', v)}
-        />
-        <SelectRow
-          label="Transactions Per Page"
-          value={settings.pageSize}
-          options={PAGINATION.PAGE_SIZES.map(n => ({ value: n, label: `${n} per page` }))}
-          onChange={(v) => updateDisplay('pageSize', parseInt(v))}
-        />
-        <ToggleRow
-          label="Show Account Balance"
-          description="Display balances on account cards"
-          checked={settings.showAccountBalance}
-          onChange={(v) => updateDisplay('showAccountBalance', v)}
-        />
-        <ToggleRow
-          label="Compact Transaction View"
-          description="Reduced spacing — fits more on screen"
-          checked={settings.compactView}
-          onChange={(v) => updateDisplay('compactView', v)}
-        />
-        <div className="flex justify-end pt-3">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSaveDisplay}
-            leftIcon={saved ? <Check className="h-4 w-4" /> : null}
-            className={saved ? 'bg-green-600 hover:bg-green-700' : ''}
-          >
-            {saved ? 'Saved!' : 'Save Display Settings'}
-          </Button>
-        </div>
-      </Section>
-
-      {/* ── Notification Preferences ── */}
+      {/* ── Notifications & Alerts ── */}
       <Section
         icon={Bell}
         title="Notifications & Alerts"
@@ -283,7 +206,7 @@ const Settings = () => {
         iconColor="text-yellow-600"
         iconBg="bg-yellow-50"
       >
-        {/* Email status */}
+        {/* Email status row */}
         <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
           <div>
             <p className="text-sm font-medium text-gray-900">Email: {user?.email}</p>
@@ -293,23 +216,23 @@ const Settings = () => {
             <EmailStatus status={emailStatus} />
             <button
               onClick={handleTestEmail}
-              className="text-xs text-blue-600 hover:text-blue-700 hover:underline"
+              className="text-xs text-blue-600 hover:text-blue-700 hover:underline whitespace-nowrap"
             >
-              Test
+              Test connection
             </button>
           </div>
         </div>
 
         <ToggleRow
           label="Budget Threshold Alerts"
-          description="Get an email when spending reaches your set threshold (e.g. 80%) or exceeds the budget"
+          description="Get an email when spending reaches your alert threshold or exceeds the budget"
           checked={notifPrefs.budgetAlerts}
           onChange={(v) => setNotifPrefs(p => ({ ...p, budgetAlerts: v }))}
         />
 
         <ToggleRow
           label="Weekly Financial Report"
-          description="A summary email with income, expenses, savings rate and budget status"
+          description="A summary email every week with income, expenses, savings rate and budget status"
           checked={notifPrefs.weeklyReport}
           onChange={(v) => setNotifPrefs(p => ({ ...p, weeklyReport: v }))}
         />
@@ -326,11 +249,11 @@ const Settings = () => {
 
         <SelectRow
           label="Default Budget Alert Threshold"
-          description="New budgets will warn at this percentage"
-          value={notifPrefs.defaultBudgetAlert || settings.defaultBudgetAlert}
+          description="New budgets will send a warning at this percentage"
+          value={notifPrefs.defaultBudgetAlert || 80}
           options={ALERT_THRESHOLDS.map(n => ({
             value: n,
-            label: n === 100 ? '100% — Only on exceed' : `${n}%`
+            label: n === 100 ? '100% — Only when exceeded' : `${n}%`
           }))}
           onChange={(v) => setNotifPrefs(p => ({ ...p, defaultBudgetAlert: parseInt(v) }))}
         />
@@ -345,7 +268,6 @@ const Settings = () => {
           >
             Send Report Now
           </Button>
-
           <Button
             variant="primary"
             size="sm"
@@ -369,9 +291,15 @@ const Settings = () => {
         <div className="flex items-center justify-between py-3 border-b border-gray-100">
           <div>
             <p className="text-sm font-medium text-gray-900">Export Transactions</p>
-            <p className="text-xs text-gray-500 mt-0.5">Download all transactions as CSV</p>
+            <p className="text-xs text-gray-500 mt-0.5">Download all your transactions as a CSV file</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={handleExportCSV} isLoading={exporting} leftIcon={<Download className="h-4 w-4" />}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCSV}
+            isLoading={exporting}
+            leftIcon={<Download className="h-4 w-4" />}
+          >
             Export CSV
           </Button>
         </div>
@@ -381,26 +309,15 @@ const Settings = () => {
             <p className="text-sm font-medium text-gray-900">Clear App Cache</p>
             <p className="text-xs text-gray-500 mt-0.5">Force-refresh all data from the server</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={handleClearCache} isLoading={clearingCache} leftIcon={<RefreshCw className="h-4 w-4" />}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleClearCache}
+            isLoading={clearingCache}
+            leftIcon={<RefreshCw className="h-4 w-4" />}
+          >
             Clear Cache
           </Button>
-        </div>
-      </Section>
-
-      {/* ── About ── */}
-      <Section icon={Info} title="About FinWise" iconColor="text-purple-600" iconBg="bg-purple-50">
-        <div className="space-y-0">
-          {[
-            { label: 'Version',        value: '1.0.0' },
-            { label: 'Logged in as',   value: user?.email || '—' },
-            { label: 'AI powered by',  value: 'Google Gemini 2.5 Flash' },
-            { label: 'Built with',     value: 'React 19 · Node.js · MongoDB · Tailwind CSS' }
-          ].map(({ label, value }) => (
-            <div key={label} className="flex justify-between py-2.5 border-b border-gray-100 last:border-0 text-sm">
-              <span className="text-gray-500">{label}</span>
-              <span className="font-medium text-gray-900 text-right max-w-[60%]">{value}</span>
-            </div>
-          ))}
         </div>
       </Section>
 

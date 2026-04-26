@@ -75,10 +75,9 @@ export const deleteTransaction = async (id) => {
  * @param {string[]} transactionIds - Array of transaction IDs
  */
 export const bulkDeleteTransactions = async (transactionIds) => {
-  const response = await apiClient.delete('/transactions/bulk-delete', {
-    transactionIds
-  })
-  return response
+  // transactionIds must be a plain array — pass as body to DELETE request
+  const ids = Array.isArray(transactionIds) ? transactionIds : transactionIds?.transactionIds || []
+  return apiClient.delete('/transactions/bulk-delete', { transactionIds: ids })
 }
 
 /**
