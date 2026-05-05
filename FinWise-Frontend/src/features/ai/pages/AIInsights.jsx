@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Brain, TrendingUp, TrendingDown, Wallet,
-  Sparkles, Receipt, FileText, ChevronDown, ChevronUp, X
+  Sparkles, Receipt, ReceiptIndianRupee, FileText, ChevronDown, ChevronUp, X
 } from 'lucide-react'
 import { useGenerateInsights, useInvestmentSuggestions, useTaxTips, useScanReceipt } from '../hooks/useAI'
 import { useAccounts } from '../../accounts/hooks/useAccounts'
@@ -136,7 +136,7 @@ const ReceiptScanner = () => {
   return (
     <Card>
       <div className="flex items-center space-x-2 mb-4">
-        <Receipt className="h-5 w-5 text-blue-600" />
+        <ReceiptIndianRupee className="h-5 w-5 text-blue-600" />
         <h3 className="font-semibold text-gray-900">Receipt Scanner</h3>
       </div>
 
@@ -158,7 +158,7 @@ const ReceiptScanner = () => {
               <p className="text-sm text-blue-600 animate-pulse">Scanning receipt with AI...</p>
             ) : (
               <div className="text-center">
-                <Receipt className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <ReceiptIndianRupee className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-600">Click to upload a receipt</p>
                 <p className="text-xs text-gray-400 mt-1">JPG, PNG up to 5MB</p>
               </div>
