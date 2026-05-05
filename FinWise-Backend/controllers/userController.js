@@ -122,49 +122,38 @@ export const getDashboardStats = async (req, res) => {
       .sort({ nextRecurringDate: 1 })
       .limit(5);
 
-    // ── Budget usage — use most recent month that has budgets ────────────────
-    // This prevents showing 0% when budgets exist for a past month
+    // ── Budget usage — aggregate across ALL budgets, each vs its own month ─────
+    // Using the same logic as getBudgetStats so numbers are consistent
     const budgetModel = (await import('../models/Budget.js')).default;
 
-    // Find most recent budget month for this user
-    const latestBudget = await budgetModel
-      .findOne({ user: userObjectId })
-      .sort({ year: -1, month: -1 });
+    const allBudgets = await budgetModel.find({ user: userObjectId });
 
     let totalBudget = 0;
-    let budgetUsage = 0;
+    let totalSpent  = 0;
 
-    if (latestBudget) {
-      const budgetYear  = latestBudget.year;
-      const budgetMonth = latestBudget.month;
+    for (const b of allBudgets) {
+      const bStart = new Date(b.year, b.month - 1, 1);
+      const bEnd   = new Date(b.year, b.month, 0, 23, 59, 59, 999);
 
-      const budgets = await budgetModel.find({
-        user: userObjectId,
-        year: budgetYear,
-        month: budgetMonth
-      });
-
-      totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0);
-
-      const bStart = new Date(budgetYear, budgetMonth - 1, 1);
-      const bEnd   = new Date(budgetYear, budgetMonth, 0, 23, 59, 59, 999);
-
-      const monthlyExpenseForBudget = await Transaction.aggregate([
+      const result = await Transaction.aggregate([
         {
           $match: {
             user: userObjectId,
             type: 'EXPENSE',
+            $expr: { $eq: [{ $toLower: '$category' }, b.category.toLowerCase()] },
             date: { $gte: bStart, $lte: bEnd }
           }
         },
         { $group: { _id: null, total: { $sum: '$amount' } } }
       ]);
 
-      const actualMonthlyExpense = monthlyExpenseForBudget[0]?.total || 0;
-      budgetUsage = totalBudget > 0
-        ? parseFloat(((actualMonthlyExpense / totalBudget) * 100).toFixed(1))
-        : 0;
+      totalBudget += b.amount;
+      totalSpent  += result[0]?.total || 0;
     }
+
+    const budgetUsage = totalBudget > 0
+      ? parseFloat(((totalSpent / totalBudget) * 100).toFixed(1))
+      : 0;
 
     res.status(200).json({
       success: true,

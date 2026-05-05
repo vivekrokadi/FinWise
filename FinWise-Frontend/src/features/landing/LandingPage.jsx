@@ -8,7 +8,7 @@ import {
   Lock, Zap, Globe, Star
 } from 'lucide-react'
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+
 
 const FEATURES = [
   {
