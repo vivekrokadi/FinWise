@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
   Calendar,
   Tag,
   Building,
@@ -51,24 +51,30 @@ const TransactionDetail = () => {
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'INCOME':
-        return 'bg-green-100 text-green-800'
-      case 'EXPENSE':
-        return 'bg-red-100 text-red-800'
-      case 'INVESTMENT':
-        return 'bg-blue-100 text-blue-800'
-      case 'TAX':
-        return 'bg-yellow-100 text-yellow-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+      case 'INCOME':     return 'bg-green-100 text-green-800'
+      case 'EXPENSE':    return 'bg-red-100 text-red-800'
+      case 'INVESTMENT': return 'bg-blue-100 text-blue-800'
+      case 'TAX':        return 'bg-yellow-100 text-yellow-800'
+      default:           return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getAmountColor = (type) => {
+    switch (type) {
+      case 'INCOME':     return 'text-green-600'
+      case 'EXPENSE':    return 'text-red-600'
+      case 'INVESTMENT': return 'text-blue-600'
+      default:           return 'text-yellow-600'
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+    <div className="space-y-4 md:space-y-6">
+
+      {/* ── Header — stacks on mobile, row on desktop ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: back + title */}
+        <div className="flex items-center gap-3 min-w-0">
           <Button
             variant="ghost"
             size="sm"
@@ -77,11 +83,13 @@ const TransactionDetail = () => {
           >
             Back
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 truncate">
             Transaction Details
           </h1>
         </div>
-        <div className="flex space-x-2">
+
+        {/* Right: action buttons — always visible, wrap if needed */}
+        <div className="flex gap-2 flex-shrink-0">
           <Button
             variant="secondary"
             size="sm"
@@ -101,77 +109,82 @@ const TransactionDetail = () => {
         </div>
       </div>
 
-      {/* Transaction Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Info */}
+      {/* ── Body — single column on mobile, 3-col grid on desktop ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+
+        {/* Main Info Card */}
         <Card className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(transaction.type)}`}>
+          {/* Type badge + recurring */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getTypeColor(transaction.type)}`}>
               {transaction.type}
             </span>
             {transaction.isRecurring && (
-              <span className="flex items-center text-sm text-blue-600">
-                <Repeat className="h-4 w-4 mr-1" />
+              <span className="flex items-center gap-1 text-sm text-blue-600">
+                <Repeat className="h-4 w-4" />
                 Recurring ({transaction.recurringInterval})
               </span>
             )}
           </div>
 
-          <div className="mb-6">
+          {/* Amount — responsive size */}
+          <div className="mb-5">
             <p className="text-sm text-gray-500 mb-1">Amount</p>
-            <p className={`text-4xl font-bold ${
-              transaction.type === 'INCOME' 
-                ? 'text-green-600' 
-                : transaction.type === 'EXPENSE'
-                ? 'text-red-600'
-                : 'text-blue-600'
-            }`}>
+            <p className={`text-3xl md:text-4xl font-bold ${getAmountColor(transaction.type)}`}>
               {transaction.type === 'INCOME' ? '+' : '-'}
               {formatCurrency(transaction.amount)}
             </p>
           </div>
 
           <div className="space-y-4">
+            {/* Description */}
             <div>
               <p className="text-sm text-gray-500 mb-1">Description</p>
-              <p className="text-lg text-gray-900">{transaction.description}</p>
+              <p className="text-base md:text-lg text-gray-900 break-words">
+                {transaction.description}
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Date + Category — stacks on mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-500 mb-1 flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" /> Date
+                <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                  <Calendar className="h-4 w-4" /> Date
                 </p>
-                <p className="text-gray-900">{formatDate(transaction.date, 'long')}</p>
+                <p className="text-gray-900 text-sm md:text-base">
+                  {formatDate(transaction.date, 'long')}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1 flex items-center">
-                  <Tag className="h-4 w-4 mr-1" /> Category
+                <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                  <Tag className="h-4 w-4" /> Category
                 </p>
-                <p className="text-gray-900 capitalize">
+                <p className="text-gray-900 capitalize text-sm md:text-base">
                   {transaction.category}
-                  {transaction.subcategory && ` / ${transaction.subcategory}`}
+                  {transaction.subcategory ? ` / ${transaction.subcategory}` : ''}
                 </p>
               </div>
             </div>
 
+            {/* Merchant */}
             {transaction.merchant && (
               <div>
-                <p className="text-sm text-gray-500 mb-1 flex items-center">
-                  <Building className="h-4 w-4 mr-1" /> Merchant
+                <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                  <Building className="h-4 w-4" /> Merchant
                 </p>
-                <p className="text-gray-900">{transaction.merchant}</p>
+                <p className="text-gray-900 text-sm md:text-base">{transaction.merchant}</p>
               </div>
             )}
 
+            {/* Tags */}
             {transaction.tags && transaction.tags.length > 0 && (
               <div>
-                <p className="text-sm text-gray-500 mb-1">Tags</p>
+                <p className="text-sm text-gray-500 mb-2">Tags</p>
                 <div className="flex flex-wrap gap-2">
                   {transaction.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded"
+                      className="px-2.5 py-1 bg-gray-100 text-gray-700 text-sm rounded-full"
                     >
                       {tag}
                     </span>
@@ -182,20 +195,24 @@ const TransactionDetail = () => {
           </div>
         </Card>
 
-        {/* Sidebar */}
+        {/* Sidebar — stacks below on mobile, right column on desktop */}
         <div className="space-y-4">
-          {/* Account Info */}
+
+          {/* Account */}
           <Card>
             <h3 className="font-semibold text-gray-900 mb-3">Account</h3>
-            <div className="flex items-center space-x-3">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: `${transaction.account?.color}20` }}
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${transaction.account?.color || '#3B82F6'}20` }}
               >
-                <FileText className="h-5 w-5" style={{ color: transaction.account?.color }} />
+                <FileText
+                  className="h-5 w-5"
+                  style={{ color: transaction.account?.color || '#3B82F6' }}
+                />
               </div>
-              <div>
-                <p className="font-medium text-gray-900">{transaction.account?.name}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-gray-900 truncate">{transaction.account?.name}</p>
                 <p className="text-sm text-gray-500">{transaction.account?.type}</p>
               </div>
             </div>
@@ -205,41 +222,39 @@ const TransactionDetail = () => {
           <Card>
             <h3 className="font-semibold text-gray-900 mb-3">Additional Information</h3>
             <div className="space-y-3">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">Status</span>
-                <span className={`text-sm font-medium ${
-                  transaction.status === 'COMPLETED' 
-                    ? 'text-green-600' 
-                    : transaction.status === 'PENDING'
-                    ? 'text-yellow-600'
-                    : 'text-red-600'
+                <span className={`text-sm font-semibold ${
+                  transaction.status === 'COMPLETED' ? 'text-green-600'
+                  : transaction.status === 'PENDING'  ? 'text-yellow-600'
+                  : 'text-red-600'
                 }`}>
                   {transaction.status}
                 </span>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">Tax Deductible</span>
-                <span className="text-sm font-medium">
+                <span className={`text-sm font-semibold ${transaction.taxDeductible ? 'text-green-600' : 'text-gray-700'}`}>
                   {transaction.taxDeductible ? 'Yes' : 'No'}
                 </span>
               </div>
 
               {transaction.type === 'INVESTMENT' && transaction.investmentType && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500 flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-1" /> Investment Type
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500 flex items-center gap-1">
+                    <TrendingUp className="h-4 w-4" /> Investment Type
                   </span>
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-semibold text-blue-600">
                     {transaction.investmentType}
                   </span>
                 </div>
               )}
 
               {transaction.nextRecurringDate && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Next Recurring</span>
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium text-gray-900">
                     {formatDate(transaction.nextRecurringDate)}
                   </span>
                 </div>
@@ -251,11 +266,11 @@ const TransactionDetail = () => {
           <Card>
             <h3 className="font-semibold text-gray-900 mb-3">Metadata</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-500">Created</span>
                 <span className="text-gray-900">{formatDate(transaction.createdAt)}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-500">Last Updated</span>
                 <span className="text-gray-900">{formatDate(transaction.updatedAt)}</span>
               </div>
@@ -280,11 +295,8 @@ const TransactionDetail = () => {
             <p className="text-gray-600 mb-4">
               Are you sure you want to delete this transaction? This action cannot be undone.
             </p>
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="secondary"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
                 Cancel
               </Button>
               <Button
