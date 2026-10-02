@@ -78,10 +78,9 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler (must be last)
+// Global error handler
 app.use(errorHandler);
 
-// ─── Database + server startup ────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
 mongoose
@@ -92,10 +91,6 @@ mongoose
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     });
-
-    // ── Cron job: check every hour if any weekly reports are due ─────────────
-    // Runs at the top of every hour. sendWeeklyReportsToAll() internally checks
-    // whether today matches each user's preferred report day.
     startCronJobs();
   })
   .catch((err) => {
@@ -107,15 +102,14 @@ async function startCronJobs() {
   try {
     const { sendWeeklyReportsToAll } = await import('./controllers/notificationController.js');
 
-    // Run once on startup then every hour
     const runJob = () => {
       sendWeeklyReportsToAll().catch(err =>
         console.error('[Cron] Weekly report error:', err.message)
       );
     };
 
-    runJob(); // immediate check on startup
-    setInterval(runJob, 60 * 60 * 1000); // every hour
+    runJob(); 
+    setInterval(runJob, 60 * 60 * 1000); 
     console.log('[Cron] Weekly report job scheduled (checks every hour)');
   } catch (err) {
     console.error('[Cron] Failed to start cron jobs:', err.message);
