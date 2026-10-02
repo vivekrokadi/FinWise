@@ -191,12 +191,12 @@ Visit `http://localhost:5173`
 
 
 <div align="center">
+  <img src="./FinWise-Frontend/src/assets/screenshots/h1.png" width="45%" />
   <img src="./FinWise-Frontend/src/assets/screenshots/dashboard.png" width="45%" />
   <img src="./FinWise-Frontend/src/assets/screenshots/transactions.png" width="45%" />
   <img src="./FinWise-Frontend/src/assets/screenshots/budget.png" width="45%" />
   <img src="./FinWise-Frontend/src/assets/screenshots/accounts.png" width="45%" />
   <img src="./FinWise-Frontend/src/assets/screenshots/ai.png" width="45%" />
-  <img src="./FinWise-Frontend/src/assets/screenshots/h1.png" width="45%" />
 </div>
 
 
