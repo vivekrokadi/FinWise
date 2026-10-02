@@ -4,7 +4,7 @@
 
 # FinWise
 
-**AI-Augmented Personal Finance Web App**
+**AI-Powered Personal Finance Web App**
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-finwise--personal--finance.vercel.app-blue?style=for-the-badge&logo=vercel)](https://finwise-personal-finance.vercel.app/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
