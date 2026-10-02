@@ -18,8 +18,8 @@ const TransactionList = ({ transactions, onSelect, selectedIds = [] }) => {
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'INCOME':    return <ArrowUpRight className="h-4 w-4 text-green-600" />
-      case 'EXPENSE':   return <ArrowDownRight className="h-4 w-4 text-red-600" />
+      case 'INCOME':    return <ArrowDownRight className="h-4 w-4 text-green-600" />
+      case 'EXPENSE':   return <ArrowUpRight className="h-4 w-4 text-red-600" />
       case 'INVESTMENT':return <ArrowUpRight className="h-4 w-4 text-blue-600" />
       case 'TAX':       return <ArrowDownRight className="h-4 w-4 text-yellow-600" />
       default:          return null

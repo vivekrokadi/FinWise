@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/vivekrokadi/FinWise/main/FinWise-Frontend/public/logo.png" alt="FinWise Logo" width="80" height="80" onerror="this.style.display='none'"/>
+<!-- <img src="https://raw.githubusercontent.com/vivekrokadi/FinWise/main/FinWise-Frontend/public/logo.png" alt="FinWise Logo" width="80" height="80" onerror="this.style.display='none'"/> -->
 
 # FinWise
 
@@ -67,64 +67,6 @@ FinWise is a full-stack personal finance application that helps users track inco
 
 ---
 
-## Project Structure
-
-```
-FinWise/
-├── FinWise-Frontend/
-│   ├── src/
-│   │   ├── api/              # Axios API client + per-feature API functions
-│   │   ├── features/         # Feature modules (auth, budgets, transactions, ai, ...)
-│   │   │   ├── budgets/
-│   │   │   │   ├── components/   # BudgetForm, BudgetCard, BudgetAlerts
-│   │   │   │   ├── hooks/        # useBudgets, useCreateOrUpdateBudget, ...
-│   │   │   │   └── pages/        # Budgets page
-│   │   │   └── ...
-│   │   ├── components/       # Shared UI components (Button, Input, Card, ...)
-│   │   └── utils/            # Constants, helpers
-│   └── package.json
-│
-└── FinWise-Backend/
-    ├── controllers/          # Route handlers (budgetController, authController, ...)
-    ├── models/               # Mongoose schemas (Budget, Transaction, User, Account)
-    ├── routes/               # Express routers
-    ├── middleware/           # auth (protect), validation, rateLimit, errorHandler
-    ├── utils/                # Helpers
-    ├── scripts/              # DB seed script
-    └── server.js             # App entry point
-```
-
----
-
-## Data Flow — Budget Feature
-
-How creating a budget moves through the system end-to-end:
-
-```
-BudgetForm (react-hook-form + Zod validation)
-      │
-      │  onSubmit() builds payload → { amount, period, category, year, month, alertsEnabled, alertThreshold }
-      ▼
-useCreateOrUpdateBudget (TanStack Query mutation)
-      │
-      │  calls createOrUpdateBudget() from api/budgets.js
-      ▼
-apiClient.post('/budgets', payload)    ← JWT token sent in Authorization header
-      │
-      ▼
-POST /api/budgets  →  validateBudget middleware  →  createOrUpdateBudget controller
-      │
-      │  findOneAndUpdate({ user, category, year, month, period }, data, { upsert: true })
-      │  Category lowercased to prevent "Groceries" / "groceries" duplicates
-      ▼
-Budget saved in MongoDB
-      │
-      ▼
-Query cache invalidated → lists, current, stats auto-refetch in UI
-```
-
----
-
 ## API Reference
 
 All routes are prefixed with `/api`. Protected routes require `Authorization: Bearer <token>`.
@@ -158,7 +100,7 @@ All routes are prefixed with `/api`. Protected routes require `Authorization: Be
 ### AI
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/ai/chat` | Chat with Gemini AI advisor |
+| POST | `/ai/insights` | Gemini AI advisor |
 
 ---
 
@@ -245,33 +187,12 @@ Visit `http://localhost:5173`
 
 ---
 
-## Key Design Decisions
-
-**Upsert over duplicate-create** — `POST /budgets` uses MongoDB `findOneAndUpdate` with `upsert: true`. If a budget for the same user + category + month + year already exists, it's updated, not duplicated. Enforced additionally by a compound unique index on the schema.
-
-**Category normalization** — All categories are lowercased server-side before storage and matching. This prevents "Food" vs "food" mismatches in budget vs transaction aggregation.
-
-**TanStack Query for cache management** — After any mutation (create/update/delete), three query keys are invalidated — `lists`, `current`, `stats` — so every part of the UI that shows budget data automatically refetches without prop drilling.
-
-**Route ordering in Express** — `/budgets/current`, `/budgets/alerts`, `/budgets/stats` are registered before `/:id` to prevent named paths being matched as an ID param.
-
----
-
 ## Screenshots
 
 > *(Add screenshots of your dashboard, budget page, and AI chat here)*
 > 
 > Suggested: drag and drop images into this section on GitHub, or use a tool like [Shots.so](https://shots.so) to create clean mockup frames.
 
----
-
-## Author
-
-**Vivek Rokadi**  
-B.Tech CSE — Sanjay Ghodawat University, Kolhapur  
-[GitHub](https://github.com/vivekrokadi)
-
----
 
 <div align="center">
 
