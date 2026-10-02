@@ -189,9 +189,16 @@ Visit `http://localhost:5173`
 
 ## Screenshots
 
-> *(Add screenshots of your dashboard, budget page, and AI chat here)*
-> 
-> Suggested: drag and drop images into this section on GitHub, or use a tool like [Shots.so](https://shots.so) to create clean mockup frames.
+## Screenshots
+
+<div align="center">
+  <img src="./FinWise-Frontend/assets/screenshots/dashboard.png" width="45%" />
+  <img src="./FinWise-Frontend/assets/screenshots/transactions.png" width="45%" />
+  <img src="./FinWise-Frontend/assets/screenshots/budget.png" width="45%" />
+  <img src="./FinWise-Frontend/assets/screenshots/accounts.png" width="45%" />
+  <img src="./FinWise-Frontend/assets/screenshots/ai.png" width="45%" />
+  <img src="./FinWise-Frontend/assets/screenshots/h1.png" width="45%" />
+</div>
 
 
 <div align="center">
