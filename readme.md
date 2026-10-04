@@ -108,7 +108,7 @@ All routes are prefixed with `/api`. Protected routes require `Authorization: Be
 
 ### Prerequisites
 - Node.js 18+
-- MongoDB (local or Atlas)
+- MongoDB (Atlas)
 - Google Gemini API key
 - Cloudinary account (for image uploads)
 
